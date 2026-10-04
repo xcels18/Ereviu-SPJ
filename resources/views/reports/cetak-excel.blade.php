@@ -39,16 +39,12 @@
     @forelse ($groups as $groupIndex => $group)
         @php
             $rowBg = $groupIndex % 2 === 0 ? '#ffffff' : '#f1f5f9';
-            $statusColors = [
-                'Lengkap' => ['#e8f8f0', '#0f7a4d'],
-                'Tidak Lengkap' => ['#fdecec', '#b91c1c'],
-                'Belum Direviu' => ['#fef7e6', '#b45309'],
-                'Belum Ada Bukti' => ['#f1f5f9', '#64748b'],
-            ];
         @endphp
         @foreach ($group->items as $i => $item)
             @php
-                [$statusBg, $statusColor] = $statusColors[$item->status] ?? ['#f1f5f9', '#334155'];
+                $statusColors = config('report-statuses')[$item->status] ?? config('report-statuses.Belum Ada Bukti');
+                $statusBg = $statusColors['background'];
+                $statusColor = $statusColors['text'];
             @endphp
             <tr>
                 @if ($i === 0)

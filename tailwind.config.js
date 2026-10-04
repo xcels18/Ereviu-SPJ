@@ -4,10 +4,10 @@ import forms from '@tailwindcss/forms';
 // Shared palette: orange, ink, rose, lime and sage.
 const mix = (hex, target, weight) => '#' + [0, 2, 4].map(i => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - weight) + parseInt(target.slice(i, i + 2), 16) * weight).toString(16).padStart(2, '0')).join('');
 const scale = hex => Object.fromEntries([[50,.94],[100,.86],[200,.68],[300,.46],[400,.22],[500,0],[600,-.18],[700,-.36],[800,-.52],[900,-.68],[950,-.8]].map(([level, weight]) => [level, mix(hex, weight >= 0 ? 'ffffff' : '0b2027', Math.abs(weight))]));
-const sage = scale('53917e');
-const orange = scale('ffa630');
-const rose = scale('ef476f');
-const lime = scale('c7ef00');
+const sage = scale('439575');
+const orange = scale('a17c2c');
+const rose = scale('b56971');
+const lime = scale('439575');
 const ink = {50:'#f5f7f7',100:'#e9eeee',200:'#d4dede',300:'#b2c2c4',400:'#81999e',500:'#59757c',600:'#425e65',700:'#30494f',800:'#203940',850:'#183037',900:'#102930',925:'#0e252c',950:'#0b2027'};
 
 /** @type {import('tailwindcss').Config} */
@@ -23,17 +23,17 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
+                sans: ['Inter', '"Avenir Next"', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-                brand: { ...sage, 950: '#0b2027' },
+                brand: { ...scale('1e3a5f'), 600: '#2d517b', 700: '#1e3a5f', 800: '#19314f', 900: '#162e4b', 950: '#12263e' },
                 slate: ink,
                 gold: orange,
                 orange, amber: orange, yellow: orange,
                 rose, red: rose, pink: rose,
                 lime,
                 green: sage, emerald: sage, teal: sage,
-                blue: sage, cyan: sage, sky: sage,
+                blue: scale('587faf'), cyan: scale('587faf'), sky: scale('587faf'),
                 indigo: ink, purple: rose, violet: rose,
                 palette: { orange: '#ffa630', ink: '#0b2027', rose: '#ef476f', lime: '#c7ef00', sage: '#53917e' },
             },

@@ -79,7 +79,10 @@
                         <td class="text-right">{{ $i === 0 ? 'Rp ' . number_format($group->nilai_sp2d, 0, ',', '.') : '' }}</td>
                         <td>{{ $item->akun_belanja }}</td>
                         <td class="text-right">Rp {{ number_format($item->nilai_akun, 0, ',', '.') }}</td>
-                        <td class="text-center">{{ $item->status }}</td>
+                        @php
+                            $statusColors = config('report-statuses')[$item->status] ?? config('report-statuses.Belum Ada Bukti');
+                        @endphp
+                        <td style="text-align:center; font-weight:bold; background-color: {{ $statusColors['background'] }}; color: {{ $statusColors['text'] }};">{{ $item->status }}</td>
                         <td>{{ $item->catatan_reviu ?: '-' }}</td>
                     </tr>
                 @endforeach

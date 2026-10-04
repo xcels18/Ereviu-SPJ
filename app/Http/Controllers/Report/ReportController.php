@@ -13,6 +13,7 @@ use App\Models\Sp2d;
 use App\Models\Sp2dBudgetCode;
 use App\Models\Spj;
 use App\Models\SpjFinding;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -79,7 +80,7 @@ class ReportController extends Controller
             $totalSp2d = count($sp2dIds);
             $totalAnggaran = $sp2dIds ? Sp2d::whereIn('id', $sp2dIds)->sum('jumlah_total') : 0;
 
-            [$totalAkun, $lengkap, $tidakLengkap, $belumAdaBukti, $belumDinilai] = $this->hitungStatusAkunBelanja($sp2dIds);
+            [$totalAkun, $lengkap, $tidakLengkap, $belumAdaBukti, $belumDinilai, $belumDibelanjakan] = $this->hitungStatusAkunBelanja($sp2dIds);
 
             $totalSpj = $sp2dIds ? Spj::whereIn('sp2d_id', $sp2dIds)->count() : 0;
             $spjReviewed = $sp2dIds ? Spj::whereIn('sp2d_id', $sp2dIds)->where('status', 'reviewed')->count() : 0;
@@ -96,6 +97,7 @@ class ReportController extends Controller
                 'spj_proses' => $spjProses,
                 'spj_reviewed' => $spjReviewed,
                 'total_akun' => $totalAkun,
+                'akun_belum_dibelanjakan' => $belumDibelanjakan,
                 'akun_lengkap' => $lengkap,
                 'akun_tidak_lengkap' => $tidakLengkap,
                 'akun_belum_dinilai' => $belumDinilai,
@@ -111,6 +113,7 @@ class ReportController extends Controller
             'spj_proses' => $opdReports->sum('spj_proses'),
             'spj_reviewed' => $opdReports->sum('spj_reviewed'),
             'total_akun' => $opdReports->sum('total_akun'),
+            'akun_belum_dibelanjakan' => $opdReports->sum('akun_belum_dibelanjakan'),
             'akun_lengkap' => $opdReports->sum('akun_lengkap'),
             'akun_tidak_lengkap' => $opdReports->sum('akun_tidak_lengkap'),
             'akun_belum_dinilai' => $opdReports->sum('akun_belum_dinilai'),
@@ -362,13 +365,13 @@ class ReportController extends Controller
     protected function hitungStatusAkunBelanja(array $sp2dIds): array
     {
         if (empty($sp2dIds)) {
-            return [0, 0, 0, 0, 0];
+            return [0, 0, 0, 0, 0, 0];
         }
 
         $totalAkun = Sp2dBudgetCode::whereIn('sp2d_id', $sp2dIds)->count();
 
         if ($totalAkun === 0) {
-            return [0, 0, 0, 0, 0];
+            return [0, 0, 0, 0, 0, 0];
         }
 
         $budgetCodeIdsWithBukti = DB::table('spj_documents')
@@ -405,12 +408,13 @@ class ReportController extends Controller
         $tidakLengkap = 0;
         $belumAdaBukti = 0;
         $belumDinilai = 0;
+        $belumDibelanjakan = 0;
 
         Sp2dBudgetCode::whereIn('sp2d_id', $sp2dIds)
             ->select('id', 'sp2d_id')
             ->orderBy('id')
             ->chunk(1000, function ($codes) use (
-                &$lengkap, &$tidakLengkap, &$belumAdaBukti, &$belumDinilai,
+                &$lengkap, &$tidakLengkap, &$belumAdaBukti, &$belumDinilai, &$belumDibelanjakan,
                 $budgetCodeIdsWithBukti, $sp2dIdsWithGabunganBukti, $findingsPerKode, $findingsGabungan
             ) {
                 foreach ($codes as $code) {
@@ -419,6 +423,7 @@ class ReportController extends Controller
                     // Dana belum dibelanjakan dianggap tuntas (tidak ada bukti yang
                     // perlu diunggah), disatukan ke hitungan "lengkap".
                     if ($status === 'belum_dibelanjakan') {
+                        $belumDibelanjakan++;
                         $lengkap++;
 
                         continue;
@@ -442,7 +447,7 @@ class ReportController extends Controller
                 }
             });
 
-        return [$totalAkun, $lengkap, $tidakLengkap, $belumAdaBukti, $belumDinilai];
+        return [$totalAkun, $lengkap, $tidakLengkap, $belumAdaBukti, $belumDinilai, $belumDibelanjakan];
     }
 
     /**
@@ -767,9 +772,24 @@ class ReportController extends Controller
 
     public function cetakLaporan(Request $request)
     {
+        $request->validate(['irban_id' => ['nullable', 'integer', 'min:1']]);
         $assignedOpdIds = $this->scopedOpdIds();
+        $irbanQuery = User::role('irban');
+        if (auth()->user()->isIrbanLike()) {
+            $irbanQuery->whereKey(auth()->user()->irbanScopeUserId() ?? 0);
+        } elseif ($assignedOpdIds !== null) {
+            $irbanQuery->whereHas('auditorOpdAssignments', fn ($query) => $query->whereIn('opd_id', $assignedOpdIds));
+        }
+        $irbans = $irbanQuery->orderBy('name')->get(['id', 'name']);
+        $selectedIrban = $request->filled('irban_id')
+            ? $irbans->firstWhere('id', (int) $request->input('irban_id')) : null;
+        abort_if($request->filled('irban_id') && ! $selectedIrban, 403);
+
 
         $opdQuery = $assignedOpdIds === null ? Opd::query() : Opd::whereIn('id', $assignedOpdIds ?: [0]);
+        if ($selectedIrban) {
+            $opdQuery->whereIn('id', AuditorOpdAssignment::where('user_id', $selectedIrban->id)->select('opd_id'));
+        }
         $opds = $opdQuery->orderBy('nama_opd')->get();
 
         $availableYears = Sp2d::pluck('tanggal')
@@ -786,7 +806,7 @@ class ReportController extends Controller
         $groups = [];
 
         if ($opdId && ($assignedOpdIds === null || in_array((int) $opdId, $assignedOpdIds, true))) {
-            $selectedOpd = $opds->firstWhere('id', (int) $opdId) ?? Opd::find($opdId);
+            $selectedOpd = $opds->firstWhere('id', (int) $opdId);
 
             if ($selectedOpd) {
                 $groups = $this->buildLaporanReviuGroups((int) $opdId, $tahun, $triwulan);
@@ -820,6 +840,8 @@ class ReportController extends Controller
         }
 
         return view('reports.cetak', [
+            'irbans' => $irbans,
+            'selectedIrban' => $selectedIrban,
             'opds' => $opds,
             'availableYears' => $availableYears,
             'selectedOpd' => $selectedOpd,
@@ -881,7 +903,7 @@ class ReportController extends Controller
                 } elseif ($statusBukti === 'tidak_lengkap') {
                     $status = 'Tidak Lengkap';
                 } else {
-                    $status = 'Belum Dinilai';
+                    $status = 'Belum Direviu';
                 }
 
                 $items[] = (object) [

@@ -38,6 +38,38 @@ class WorkflowProtectionTest extends TestCase
         return Spj::create(['sp2d_id' => $sp2d->id, 'opd_id' => $sp2d->opd_id, 'nomor_spj' => 'UJI', 'tanggal' => '2026-09-01', 'jumlah' => 1000, 'status' => 'submitted']);
     }
 
+    public function test_report_separates_unspent_accounts_and_renders_both_views(): void
+    {
+        [$sp2d, $code] = $this->fixture();
+        $spj = $this->spj($sp2d);
+        $spj->findings()->create(['sp2d_budget_code_id' => $code->id, 'finding_type' => 'note', 'status_bukti' => 'belum_dibelanjakan', 'description' => '', 'created_by' => auth()->id()]);
+        $this->get(route('reports.index'))->assertOk()
+            ->assertSee('Status akun belanja')
+            ->assertViewHas('summary', fn ($summary) => $summary->akun_belum_dibelanjakan === 1 && $summary->total_akun === 1 && $summary->akun_lengkap - $summary->akun_belum_dibelanjakan === 0);
+        $this->get(route('reports.index', ['view' => 'bulanan']))->assertOk()->assertSee('Tuntas');
+        $this->get(route('reports.index', ['search' => 'Tidak ditemukan']))->assertOk()->assertSee('Tidak ada OPD sesuai filter');
+    }
+
+    public function test_report_irban_filter_limits_opds_and_rejects_outside_selection(): void
+    {
+        [$sp2d] = $this->fixture();
+        $irban = User::factory()->create();
+        $irban->assignRole('irban');
+        $irban->auditorOpdAssignments()->create(['opd_id' => $sp2d->opd_id]);
+        $other = Opd::create(['nama_opd' => 'Di luar wilayah']);
+
+        $this->get(route('reports.cetak', ['irban_id' => $irban->id, 'opd_id' => $sp2d->opd_id]))
+            ->assertOk()
+            ->assertViewHas('opds', fn ($opds) => $opds->modelKeys() === [$sp2d->opd_id])
+            ->assertViewHas('selectedOpd', fn ($opd) => $opd->id === $sp2d->opd_id);
+        $this->get(route('reports.cetak', ['irban_id' => $irban->id, 'opd_id' => $other->id, 'export' => 'excel']))
+            ->assertOk()->assertViewHas('selectedOpd', null)->assertViewHas('groups', []);
+
+        $outsider = User::factory()->create();
+        $outsider->assignRole('irban');
+        $this->actingAs($outsider)->get(route('reports.cetak', ['irban_id' => $irban->id]))->assertForbidden();
+    }
+
     public function test_edit_preserves_ids_and_rejects_used_account_deletion_atomically(): void
     {
         [$sp2d, $code, $data] = $this->fixture();

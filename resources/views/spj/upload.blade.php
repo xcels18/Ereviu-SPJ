@@ -42,7 +42,7 @@
             @if (($mode ?? 'sp2d_list') === 'opd_list')
                 <!-- Executive Modern Hero Header for OPD Directory -->
                 <div class="mb-8">
-                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 text-white p-7 sm:p-8 shadow-xl shadow-slate-900/10 border border-slate-800">
+                    <div class="ek-spj-heading relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 text-white p-7 sm:p-8 shadow-xl shadow-slate-900/10 border border-slate-800">
                         <div class="absolute -right-16 -top-16 w-80 h-80 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
                         <div class="absolute right-32 -bottom-20 w-64 h-64 bg-gold-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -269,7 +269,7 @@
                     @endif
 
                     <!-- Hero Banner OPD -->
-                    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 text-white p-7 sm:p-8 shadow-xl shadow-slate-900/10 border border-slate-800">
+                    <div class="ek-spj-heading relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 text-white p-7 sm:p-8 shadow-xl shadow-slate-900/10 border border-slate-800">
                         <div class="absolute -right-16 -top-16 w-80 h-80 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
                         <div class="absolute right-32 -bottom-20 w-64 h-64 bg-gold-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -1965,7 +1965,13 @@
         currentReviewReadonly = readonly;
 
         document.getElementById('review-version').value = spj.review_version ?? 0;
-        document.getElementById('review-reason').value = '';
+        const reviewReason = document.getElementById('review-reason');
+        reviewReason.value = '';
+        reviewReason.required = !readonly && spj.status === 'reviewed';
+        reviewReason.disabled = readonly;
+        reviewReason.placeholder = spj.status === 'reviewed'
+            ? 'Contoh: Bukti tambahan sudah diperiksa dan dinyatakan lengkap.'
+            : 'Alasan perubahan, jika ada';
         document.getElementById('reviewForm').action = '{{ url("/spj") }}/' + spj.id + '/review';
         document.getElementById('review_modal_title').textContent = readonly ? 'Lihat Dokumen SPJ' : 'Reviu Dokumen SPJ';
         document.getElementById('review_readonly_badge').classList.toggle('hidden', !readonly);

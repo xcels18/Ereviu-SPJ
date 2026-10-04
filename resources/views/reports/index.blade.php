@@ -1,140 +1,50 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between w-full">
-            <div>
-                <h1 class="page-title">Laporan</h1>
-                <p class="text-sm text-slate-500 mt-0.5">Rekap kelengkapan bukti belanja per OPD</p>
-            </div>
+        <div class="flex flex-wrap items-center justify-between gap-3 w-full">
+            <div><h1 class="page-title">Laporan SPJ</h1><p class="text-sm text-slate-500 mt-1">Pantau bukti belanja dan hasil reviu per OPD.</p></div>
+            <a href="{{ route('reports.cetak') }}" class="btn-secondary">Laporan rinci & cetak</a>
         </div>
     </x-slot>
-
-    <div class="py-8">
+    @php
+        $months = [1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember'];
+        $statusFields = ['Belum Ada Bukti'=>'akun_belum_ada_bukti','Belum Direviu'=>'akun_belum_dinilai','Tidak Lengkap'=>'akun_tidak_lengkap','Lengkap'=>'akun_lengkap','Belum Dibelanjakan'=>'akun_belum_dibelanjakan'];
+        $period = ($view === 'ringkasan' && request('bulan') ? ($months[(int) request('bulan')] ?? '') . ' · ' : '') . (request('tahun') ?: 'Semua tahun');
+    @endphp
+    <div class="py-6 reports-workspace">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Ringkasan -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="stat-card">
-                    <span class="stat-label">OPD Terpantau</span>
-                    <span class="stat-value text-brand-700 text-xl">{{ $summary->total_opd }}</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Total SP2D</span>
-                    <span class="stat-value text-blue-700 text-xl">{{ $summary->total_sp2d }}</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Total Akun Belanja</span>
-                    <span class="stat-value text-slate-900 text-xl">{{ $summary->total_akun }}</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">SPJ Selesai Direviu</span>
-                    <span class="stat-value text-emerald-700 text-xl">{{ $summary->spj_reviewed }}</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <div class="stat-card">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="stat-label">Akun Lengkap</span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    </div>
-                    <span class="stat-value text-emerald-700 text-xl">{{ $summary->akun_lengkap }}</span>
-                </div>
-                <div class="stat-card">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="stat-label">Akun Tidak Lengkap</span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                    </div>
-                    <span class="stat-value text-red-700 text-xl">{{ $summary->akun_tidak_lengkap }}</span>
-                </div>
-                <div class="stat-card">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="stat-label">Belum Ada Bukti</span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-                    </div>
-                    <span class="stat-value text-slate-500 text-xl">{{ $summary->akun_belum_ada_bukti }}</span>
-                </div>
-            </div>
-
-            @if ($summary->akun_belum_dinilai > 0)
-                <p class="text-xs text-amber-600 mb-6 -mt-2">
-                    Catatan: {{ $summary->akun_belum_dinilai }} akun belanja sudah memiliki bukti namun status kelengkapannya belum ditentukan oleh pemeriksa.
-                </p>
-            @endif
-
-            <!-- Filter -->
-            <div class="card p-4 mb-6">
-                <div class="flex items-center gap-2 mb-4">
-                    <a href="{{ route('reports.index', array_merge(request()->only(['search', 'tahun']), ['view' => 'ringkasan'])) }}"
-                        class="px-3 py-1.5 rounded-lg text-sm font-medium {{ $view === 'ringkasan' ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                        Ringkasan OPD
-                    </a>
-                    <a href="{{ route('reports.index', array_merge(request()->only(['search', 'tahun']), ['view' => 'bulanan'])) }}"
-                        class="px-3 py-1.5 rounded-lg text-sm font-medium {{ $view === 'bulanan' ? 'bg-brand-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                        Per Bulan
-                    </a>
-                </div>
-                <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div class="card reports-controls">
+                <nav class="reports-tabs" aria-label="Tampilan laporan">
+                    @foreach (['ringkasan'=>'Ringkasan OPD','bulanan'=>'Pemantauan bulanan'] as $key=>$label)
+                        <a href="{{ route('reports.index', array_merge(request()->only(['search','tahun']), ['view'=>$key])) }}" class="{{ $view === $key ? 'is-active' : '' }}" @if($view === $key) aria-current="page" @endif>{{ $label }}</a>
+                    @endforeach
+                </nav>
+                <form action="{{ route('reports.index') }}" method="GET" class="reports-filter">
                     <input type="hidden" name="view" value="{{ $view }}">
-                    <div class="lg:col-span-2">
-                        <label class="form-label">Cari Nama OPD</label>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama OPD..."
-                            class="form-input">
-                    </div>
-                    <div>
-                        <label class="form-label">Tahun</label>
-                        <select name="tahun" class="form-select w-full" onchange="this.form.submit()">
-                            <option value="">Semua Tahun</option>
-                            @foreach ($availableYears as $year)
-                                <option value="{{ $year }}" {{ (string) request('tahun') === (string) $year ? 'selected' : '' }}>{{ $year }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @if ($view === 'ringkasan')
-                    <div>
-                        <label class="form-label">Bulan</label>
-                        <select name="bulan" class="form-select w-full" onchange="this.form.submit()">
-                            <option value="">Semua Bulan</option>
-                            @php
-                                $bulanList = [
-                                    1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-                                    5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                                    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
-                                ];
-                            @endphp
-                            @foreach ($bulanList as $num => $label)
-                                <option value="{{ $num }}" {{ (string) request('bulan') === (string) $num ? 'selected' : '' }}>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @endif
-                    <div class="lg:col-span-4 flex justify-end gap-2">
-                        <button type="submit" class="btn-primary">Terapkan Filter</button>
-                        @if (request()->hasAny(['search', 'tahun', 'bulan']))
-                            <a href="{{ route('reports.index', ['view' => $view]) }}" class="btn bg-slate-100 text-slate-600 hover:bg-slate-200">Reset</a>
-                        @endif
-                    </div>
+                    <div class="reports-search"><label for="report-search" class="form-label">OPD</label><input id="report-search" type="search" name="search" value="{{ request('search') }}" placeholder="Cari nama OPD…" class="form-input w-full"></div>
+                    <div><label for="report-year" class="form-label">Tahun</label><select id="report-year" name="tahun" class="form-select w-full"><option value="">Semua tahun</option>@foreach($availableYears as $year)<option value="{{ $year }}" @selected((string)request('tahun') === (string)$year)>{{ $year }}</option>@endforeach</select></div>
+                    @if($view === 'ringkasan')<div><label for="report-month" class="form-label">Bulan</label><select id="report-month" name="bulan" class="form-select w-full"><option value="">Semua bulan</option>@foreach($months as $num=>$label)<option value="{{ $num }}" @selected((string)request('bulan') === (string)$num)>{{ $label }}</option>@endforeach</select></div>@endif
+                    <button type="submit" class="btn-primary">Tampilkan</button>
+                    @if(request()->filled('search') || request()->filled('tahun') || request()->filled('bulan'))<a href="{{ route('reports.index', ['view'=>$view]) }}" class="btn-secondary">Reset</a>@endif
                 </form>
             </div>
-
-            <!-- Detail per OPD -->
-            <div class="card overflow-hidden mb-6">
-                <div class="p-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
-                    <div class="flex items-center gap-3">
-                        <h2 class="text-base font-semibold text-slate-900">Detail Kelengkapan Bukti per OPD</h2>
-                        <span class="text-xs text-slate-400">{{ $opdReports->count() }} OPD</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <a href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}" target="_blank" rel="noopener"
-                            class="btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm px-3 py-1.5 text-xs">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                            Cetak PDF
-                        </a>
-                        <a href="{{ request()->fullUrlWithQuery(['export' => 'excel']) }}"
-                            class="btn bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 shadow-sm px-3 py-1.5 text-xs">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                            Cetak Excel
-                        </a>
-                    </div>
+            <div class="reports-context"><span>{{ $period }} · {{ $summary->total_opd }} OPD sesuai filter</span><span>Seluruh angka mengikuti filter aktif</span></div>
+            <div class="reports-totals">
+                @foreach(['SP2D'=>$summary->total_sp2d,'Akun belanja'=>$summary->total_akun,'SPJ selesai direviu'=>$summary->spj_reviewed] as $label=>$value)
+                    <div><span>{{ $label }}</span><strong>{{ number_format($value,0,',','.') }}</strong></div>
+                @endforeach
+                <div><span>Nilai SP2D</span><strong class="reports-money">Rp {{ number_format($summary->total_anggaran,0,',','.') }}</strong></div>
+            </div>
+            <section class="card reports-status-panel" aria-labelledby="status-title">
+                <div class="reports-section-title"><h2 id="status-title">Status akun belanja</h2><span>Satuan: akun, bukan jumlah dokumen</span></div>
+                <div class="reports-status-grid">
+                    @foreach($statusFields as $label=>$field)
+                        @php $colors=config('report-statuses')[$label]; $count=$summary->$field - ($label === 'Lengkap' ? $summary->akun_belum_dibelanjakan : 0); @endphp
+                        <div><span><i style="background:{{ $colors['text'] }}"></i>{{ $label }}</span><strong>{{ number_format($count,0,',','.') }}</strong><small>{{ $summary->total_akun ? round($count/$summary->total_akun*100,1) : 0 }}% dari seluruh akun</small></div>
+                    @endforeach
                 </div>
+            </section>
+            <section class="card overflow-hidden reports-details">
+                <div class="reports-section-title reports-table-title"><div><h2>{{ $view === 'bulanan' ? 'Status per bulan' : 'Rincian per OPD' }}</h2><p>{{ $view === 'bulanan' ? 'Tuntas berarti seluruh akun lengkap atau belum dibelanjakan. Status campuran ditandai perlu tindak lanjut.' : 'Baca jumlah akun per status, lalu buka rincian SP2D untuk menindaklanjuti.' }}</p></div><div class="flex gap-2"><a class="btn-secondary" href="{{ request()->fullUrlWithQuery(['export'=>'pdf']) }}" target="_blank" rel="noopener">PDF</a><a class="btn-secondary" href="{{ request()->fullUrlWithQuery(['export'=>'excel']) }}">Excel</a></div></div>
                 @if ($view === 'bulanan')
                     @php
                         $bulanSingkat = [
@@ -144,19 +54,19 @@
                         ];
                         $statusBadge = [
                             'lengkap' => 'bg-emerald-50 text-emerald-700',
-                            'tidak_lengkap' => 'bg-red-50 text-red-700',
-                            'belum_upload' => 'bg-slate-100 text-slate-500',
+                            'tidak_lengkap' => 'bg-amber-50 text-amber-700',
+                            'belum_upload' => 'bg-red-50 text-red-700',
                         ];
                         $statusLabel = [
-                            'lengkap' => 'Lengkap',
-                            'tidak_lengkap' => 'Tidak Lengkap',
-                            'belum_upload' => 'Belum Upload Bukti SPJ',
+                            'lengkap' => 'Tuntas',
+                            'tidak_lengkap' => 'Perlu tindak lanjut',
+                            'belum_upload' => 'Belum ada bukti',
                         ];
                     @endphp
                     <div class="px-4 pt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Lengkap</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Tidak Lengkap</span>
-                        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Belum Upload Bukti SPJ</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Tuntas</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Perlu tindak lanjut</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Belum ada bukti</span>
                         <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full border border-slate-300"></span> Tidak Ada SP2D</span>
                         @if (!request()->filled('tahun'))
                             <span class="ml-auto text-amber-600">Menampilkan seluruh tahun (pilih Tahun untuk hasil per periode yang lebih spesifik).</span>
@@ -166,7 +76,7 @@
                         <table class="table w-full">
                             <thead>
                                 <tr>
-                                    <th>Dinas</th>
+                                    <th>OPD</th>
                                     @foreach ($bulanSingkat as $label)
                                         <th class="text-center">{{ $label }}</th>
                                     @endforeach
@@ -200,85 +110,31 @@
                             </tbody>
                         </table>
                     </div>
-                @else
-                <div class="overflow-x-auto">
-                    <table class="table w-full">
-                        <thead>
-                            <tr>
-                                <th>OPD</th>
-                                <th class="text-center">SP2D</th>
-                                <th class="text-center">SPJ Diupload</th>
-                                <th class="text-center">Selesai Direviu</th>
-                                <th class="text-center">Total Akun</th>
-                                <th class="text-center">Lengkap</th>
-                                <th class="text-center">Tidak Lengkap</th>
-                                <th class="text-center">Belum Ada Bukti</th>
-                                <th class="text-center">% Lengkap</th>
-                                <th class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($opdReports as $row)
-                                <tr class="hover:bg-slate-50">
-                                    <td>
-                                        <p class="font-medium text-slate-800">{{ $row->opd->nama_opd }}</p>
-                                        <p class="text-xs text-slate-400">{{ $row->opd->singkatan ?? '-' }}</p>
-                                    </td>
-                                    <td class="text-center">{{ $row->total_sp2d }}</td>
-                                    <td class="text-center">{{ $row->total_sp2d - $row->sp2d_belum_upload }}</td>
-                                    <td class="text-center">{{ $row->spj_reviewed }}</td>
-                                    <td class="text-center font-medium">{{ $row->total_akun }}</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-emerald-50 text-emerald-700">{{ $row->akun_lengkap }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-red-50 text-red-700">{{ $row->akun_tidak_lengkap }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-slate-100 text-slate-500">{{ $row->akun_belum_ada_bukti }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="flex items-center gap-2 justify-center">
-                                            <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                <div class="h-full bg-emerald-500" style="width: {{ min($row->persentase_lengkap, 100) }}%"></div>
-                                            </div>
-                                            <span class="text-xs font-medium text-slate-600">{{ $row->persentase_lengkap }}%</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <a href="{{ route('reports.sp2d', $row->opd->id) }}"
-                                            class="text-xs font-medium text-brand-700 hover:text-brand-800">Detail</a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="10" class="py-10 text-center text-slate-400">Tidak ada data OPD yang sesuai.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        @if ($opdReports->count() > 0)
-                            <tfoot>
-                                <tr class="bg-slate-50 font-semibold">
-                                    <td>Total</td>
-                                    <td class="text-center">{{ $summary->total_sp2d }}</td>
-                                    <td class="text-center">{{ $summary->total_sp2d - $opdReports->sum('sp2d_belum_upload') }}</td>
-                                    <td class="text-center">{{ $summary->spj_reviewed }}</td>
-                                    <td class="text-center">{{ $summary->total_akun }}</td>
-                                    <td class="text-center text-emerald-700">{{ $summary->akun_lengkap }}</td>
-                                    <td class="text-center text-red-700">{{ $summary->akun_tidak_lengkap }}</td>
-                                    <td class="text-center text-slate-500">{{ $summary->akun_belum_ada_bukti }}</td>
-                                    <td class="text-center">
-                                        {{ $summary->total_akun > 0 ? round(($summary->akun_lengkap / $summary->total_akun) * 100, 1) : 0 }}%
-                                    </td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        @endif
-                    </table>
-                </div>
-                @endif
-            </div>
 
+                @else
+                    <div class="reports-table-scroll" tabindex="0" role="region" aria-label="Rincian status per OPD">
+                        <table class="table w-full reports-summary-table">
+                            <thead><tr><th scope="col">OPD / SP2D</th><th scope="col">Progres reviu SPJ</th>@foreach($statusFields as $label=>$field)<th scope="col" class="text-center">{{ $label }}<small>akun</small></th>@endforeach<th scope="col">Rincian</th></tr></thead>
+                            <tbody>
+                                @forelse($opdReports as $row)
+                                    <tr>
+                                        <td><strong>{{ $row->opd->nama_opd }}</strong><small>{{ $row->total_sp2d }} SP2D · {{ $row->total_akun }} akun belanja</small></td>
+                                        <td><span>{{ $row->spj_reviewed }} selesai / {{ $row->total_sp2d }} SP2D</span><small>{{ $row->spj_proses }} SPJ dalam proses · {{ $row->sp2d_belum_upload }} belum ada SPJ</small></td>
+                                        @foreach($statusFields as $label=>$field)
+                                            @php $colors=config('report-statuses')[$label]; $count=$row->$field - ($label === 'Lengkap' ? $row->akun_belum_dibelanjakan : 0); @endphp
+                                            <td class="text-center"><span class="reports-count" style="background:{{ $colors['background'] }};color:{{ $colors['text'] }}">{{ number_format($count,0,',','.') }}</span></td>
+                                        @endforeach
+                                        <td><a href="{{ route('reports.sp2d', array_merge(['opd'=>$row->opd->id], request()->only(['tahun','bulan']))) }}" class="btn-secondary" aria-label="Lihat SP2D {{ $row->opd->nama_opd }}">Lihat</a></td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="8" class="text-center py-12">Tidak ada OPD sesuai filter. Ubah pencarian atau reset filter.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </section>
+            <details class="reports-help"><summary>Cara membaca laporan</summary><p>Status akun berbeda dengan status proses reviu SPJ. Selesai direviu berarti pemeriksaan selesai; hasilnya masih dapat berupa Tidak Lengkap. Belum Direviu berarti bukti tersedia tetapi belum dinilai. Belum Dibelanjakan ditampilkan terpisah dari Lengkap.</p><p>Ringkasan cetak PDF/Excel masih menggunakan format sebelumnya: angka Lengkap mencakup Belum Dibelanjakan. Gunakan Laporan rinci & cetak untuk status setiap akun secara terpisah.</p></details>
         </div>
     </div>
 </x-app-layout>

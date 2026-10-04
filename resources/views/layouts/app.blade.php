@@ -9,11 +9,11 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="app-shell font-sans antialiased text-slate-800">
+    <body class="ek-theme app-shell font-sans antialiased text-slate-800">
         <div x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false" class="min-h-screen flex">
 
             <!-- Sidebar Overlay (mobile) -->
@@ -34,7 +34,7 @@
             <!-- Sidebar -->
             <aside
                 :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-                id="main-navigation" aria-label="Navigasi utama" class="app-sidebar fixed inset-y-0 left-0 z-30 w-64 flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out"
+                id="main-navigation" aria-label="Navigasi utama" class="app-sidebar fixed inset-y-0 left-0 z-30 w-[245px] flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out"
             >
                 <!-- Logo -->
                 <div class="flex items-center gap-3 px-5 h-16 border-b border-white/10 shrink-0">
@@ -177,7 +177,7 @@
             </aside>
 
             <!-- Main Content Area -->
-            <div class="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-64">
+            <div class="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-[245px]">
 
                 <!-- Topbar -->
                 <header class="app-topbar min-h-20 bg-white/95 backdrop-blur border-b border-slate-100 flex items-center justify-between px-4 lg:px-6 shrink-0">

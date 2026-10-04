@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between w-full">
+        <div class="flex flex-wrap gap-4 items-center justify-between w-full">
             <div>
-                <h1 class="page-title">Kelola User</h1>
-                <p class="text-sm text-slate-500 mt-0.5">Kelola akun admin, irban, dan inspektur beserta wilayah kerjanya</p>
+                <h1 class="page-title">Pengguna & Hak Akses</h1>
+                <p class="text-sm text-slate-500 mt-0.5">Atur akun pengguna, peran, dan cakupan wilayah kerja.</p>
             </div>
             <a href="{{ route('users.create') }}" class="btn-primary">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                Tambah User
+                Tambah Pengguna
             </a>
         </div>
     </x-slot>
@@ -25,15 +25,9 @@
             'operator_irban' => 'Operator Irban',
             'inspektur' => 'Inspektur',
         ];
-        $roleAvatarColors = [
-            'admin' => 'bg-purple-100 text-purple-700',
-            'irban' => 'bg-blue-100 text-blue-700',
-            'operator_irban' => 'bg-indigo-100 text-indigo-700',
-            'inspektur' => 'bg-emerald-100 text-emerald-700',
-        ];
     @endphp
 
-    <div class="p-6">
+    <div class="p-6 users-directory">
         @if (session('success'))
             <div class="alert-success mb-5">
                 <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -47,56 +41,35 @@
             </div>
         @endif
 
-        <!-- Stat summary -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Total User</span>
-                    <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
-                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 2a4 4 0 10-4-4"/></svg>
-                    </div>
-                </div>
-                <span class="stat-value">{{ $roleCounts->sum() }}</span>
+        <div class="users-overview" aria-label="Ringkasan pengguna berdasarkan peran">
+            <div class="users-overview-intro">
+                <span>Administrasi akun</span>
+                <h2>Direktori pengguna</h2>
+                <p>Pilih peran untuk melihat akun dan penugasannya.</p>
             </div>
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Admin</span>
-                    <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
-                    </div>
-                </div>
-                <span class="stat-value">{{ $roleCounts['admin'] ?? 0 }}</span>
-            </div>
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Irban</span>
-                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    </div>
-                </div>
-                <span class="stat-value">{{ $roleCounts['irban'] ?? 0 }}</span>
-            </div>
-            <div class="stat-card">
-                <div class="flex items-center justify-between">
-                    <span class="stat-label">Inspektur</span>
-                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                        <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                    </div>
-                </div>
-                <span class="stat-value">{{ $roleCounts['inspektur'] ?? 0 }}</span>
+            <div class="users-role-grid">
+                @foreach ($roleLabels as $role => $label)
+                    <a href="{{ route('users.index', ['role' => $role]) }}" class="users-role-tile {{ $roleFilter === $role ? 'is-selected' : '' }}" @if ($roleFilter === $role) aria-current="true" @endif>
+                        <span>{{ $label }}</span>
+                        <strong>{{ $roleCounts[$role] ?? 0 }}</strong>
+                        <small>Lihat pengguna <span aria-hidden="true">↗</span></small>
+                    </a>
+                @endforeach
             </div>
         </div>
 
         <!-- Search & filter -->
-        <div class="card p-4 mb-5">
+        <div class="card p-4 mb-5 users-filter">
             <form action="{{ route('users.index') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
                 <div class="relative flex-1">
                     <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
-                    <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama atau email..."
+                    <label for="user-search" class="sr-only">Cari nama atau email</label>
+                    <input id="user-search" type="search" name="search" value="{{ $search }}" placeholder="Cari nama atau email..."
                         class="form-input !pl-10 w-full">
                 </div>
-                <select name="role" class="form-select sm:w-48" onchange="this.form.submit()">
-                    <option value="">Semua Role</option>
+                <label for="user-role" class="sr-only">Filter peran</label>
+                <select id="user-role" name="role" class="form-select sm:w-48">
+                    <option value="">Semua peran</option>
                     <option value="admin" {{ $roleFilter === 'admin' ? 'selected' : '' }}>Admin</option>
                     <option value="irban" {{ $roleFilter === 'irban' ? 'selected' : '' }}>Irban</option>
                     <option value="operator_irban" {{ $roleFilter === 'operator_irban' ? 'selected' : '' }}>Operator Irban</option>
@@ -109,15 +82,19 @@
             </form>
         </div>
 
-        <div class="card overflow-hidden">
+        <div class="card overflow-hidden users-list">
+            <div class="users-list-heading">
+                <div><h2>Daftar pengguna <span>{{ $users->total() }}</span></h2><p>Informasi akun dan wilayah kerja yang dapat diakses.</p></div>
+                <span class="text-xs text-slate-500">{{ $users->firstItem() ?? 0 }}–{{ $users->lastItem() ?? 0 }} dari {{ $users->total() }} pengguna</span>
+            </div>
             <div class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>User</th>
-                            <th>Role</th>
-                            <th>Wilayah Kerja</th>
-                            <th class="text-center">Aksi</th>
+                            <th scope="col">Pengguna</th>
+                            <th scope="col">Peran</th>
+                            <th scope="col">Wilayah Kerja</th>
+                            <th scope="col" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -125,12 +102,12 @@
                         <tr>
                             <td>
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm {{ $roleAvatarColors[$user->primary_role] ?? 'bg-slate-100 text-slate-600' }}">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                                    <div class="users-avatar">
+                                        {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="font-medium text-slate-900 truncate">{{ $user->name }}</p>
-                                        <p class="text-xs text-slate-500 truncate">{{ $user->email }}</p>
+                                        <p class="font-medium text-slate-900 users-name">{{ $user->name }} @if ($user->id === auth()->id()) <span class="users-self">Anda</span> @endif</p>
+                                        <p class="text-xs text-slate-500 users-email">{{ $user->email }}</p>
                                     </div>
                                 </div>
                             </td>
@@ -161,13 +138,13 @@
                             <td class="text-center">
                                 <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('users.edit', $user) }}"
-                                        title="Edit user"
-                                        class="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100 transition-colors">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        aria-label="Edit pengguna {{ $user->name }}"
+                                        class="users-edit">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg><span>Edit</span>
                                     </a>
-                                    <form action="{{ route('users.destroy', $user) }}" method="POST" onsubmit="return confirm('Yakin hapus user {{ $user->name }}?')">
+                                    <form action="{{ route('users.destroy', $user) }}" method="POST" data-confirm="Hapus pengguna {{ $user->name }}? Tindakan ini tidak dapat dibatalkan." onsubmit="return confirm(this.dataset.confirm)">
                                         @csrf @method('DELETE')
-                                        <button type="submit" title="Hapus user"
+                                        <button type="submit" aria-label="Hapus pengguna {{ $user->name }}"
                                             class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-colors">
                                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
@@ -181,9 +158,9 @@
                                 <svg class="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                 <p class="font-medium text-slate-500">
                                     @if ($search !== '' || $roleFilter !== '')
-                                        Tidak ada user yang cocok dengan pencarian
+                                        Tidak ada pengguna yang cocok dengan pencarian
                                     @else
-                                        Belum ada data user
+                                        Belum ada pengguna
                                     @endif
                                 </p>
                             </td>
