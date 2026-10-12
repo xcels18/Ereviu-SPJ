@@ -45,7 +45,8 @@
                             <thead>
                                 <tr>
                                     <th>Kode</th>
-                                    <th>Uraian</th>
+                                    <th>Uraian dan hierarki belanja</th>
+                                    <th>Sumber dana</th>
                                     <th class="text-right">Jumlah</th>
                                 </tr>
                             </thead>
@@ -53,7 +54,28 @@
                                 @foreach ($sp2d->budgetCodes as $code)
                                 <tr>
                                     <td class="font-medium">{{ $code->kode_belanja }}</td>
-                                    <td>{{ $code->uraian }}</td>
+                                    <td>
+                                        <p class="font-medium">{{ $code->uraian }}</p>
+                                        @if ($code->subactivity)
+                                            <dl class="mt-2 text-sm space-y-1">
+                                                <div><dt class="text-slate-500">Urusan</dt><dd>{{ $code->subactivity->activity->program->affair->name }}</dd></div>
+                                                <div><dt class="text-slate-500">Program</dt><dd>{{ $code->subactivity->activity->program->name }}</dd></div>
+                                                <div><dt class="text-slate-500">Kegiatan</dt><dd>{{ $code->subactivity->activity->name }}</dd></div>
+                                                <div><dt class="text-slate-500">Subkegiatan</dt><dd>{{ $code->subactivity->name }}</dd></div>
+                                            </dl>
+                                        @else
+                                            <p class="mt-2 text-sm text-slate-500">Hierarki belanja belum tersedia.</p>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @forelse ($code->fundingAllocations as $allocation)
+                                            <p class="text-sm">{{ $allocation->fundingSource->name }}</p>
+                                            <p class="text-sm text-slate-500 mb-2">Rp {{ number_format($allocation->amount, 2, ',', '.') }}</p>
+                                        @empty
+                                            <p class="text-sm text-slate-500">Belum ditentukan</p>
+                                        @endforelse
+                                        <a class="text-sm font-medium text-brand-700" href="{{ route('sp2d.funding.edit', [$sp2d, $code]) }}">Atur sumber dana</a>
+                                    </td>
                                     <td class="text-right">Rp {{ number_format($code->jumlah, 0, ',', '.') }}</td>
                                 </tr>
                                 @endforeach

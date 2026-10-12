@@ -1,0 +1,364 @@
+# ERD database SPJ OPD
+
+Schema lokal 12 Oktober 2026: **36 tabel, 37 foreign key fisik**. Diagram mencantumkan semua kolom dan tipe data.
+
+PK = primary key; FK = foreign key; UK = unique key satu kolom. Indeks unik gabungan dijelaskan pada kamus schema. `||` = tepat satu, `o|` = nol atau satu, `o{` = nol atau banyak. Garis putus-putus menunjukkan relasi non-identifying: FK tidak menjadi bagian PK anak; **tetap merupakan foreign key fisik**.
+
+Relasi polimorfik Spatie/audit ke objek target tidak digambar sebagai FK karena database tidak memiliki constraint tersebut.
+
+```mermaid
+erDiagram
+    direction LR
+    activity_logs {
+        bigint id PK "bigint unsigned"
+        bigint user_id FK "bigint unsigned nullable"
+        varchar user_name  "varchar(255) nullable"
+        varchar user_email  "varchar(255) nullable"
+        varchar user_role  "varchar(255) nullable"
+        varchar action  "varchar(50)"
+        varchar module  "varchar(50)"
+        text description  "text nullable"
+        varchar subject_type  "varchar(255) nullable"
+        varchar subject_id  "varchar(100) nullable"
+        varchar ip_address  "varchar(45) nullable"
+        varchar user_agent  "varchar(255) nullable"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    auditor_opd_assignments {
+        bigint id PK "bigint unsigned"
+        bigint user_id FK "bigint unsigned"
+        bigint opd_id FK "bigint unsigned"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    budget_accounts {
+        bigint id PK "bigint unsigned"
+        varchar code UK "varchar(50)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    budget_activities {
+        bigint id PK "bigint unsigned"
+        bigint budget_program_id FK "bigint unsigned"
+        varchar name  "varchar(255)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    budget_affairs {
+        bigint id PK "bigint unsigned"
+        varchar name UK "varchar(255)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    budget_programs {
+        bigint id PK "bigint unsigned"
+        bigint budget_affair_id FK "bigint unsigned"
+        varchar name  "varchar(255)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    budget_subactivities {
+        bigint id PK "bigint unsigned"
+        bigint budget_activity_id FK "bigint unsigned"
+        varchar name  "varchar(255)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    cache {
+        varchar key PK "varchar(255)"
+        mediumtext value  "mediumtext"
+        bigint expiration  "bigint"
+    }
+    cache_locks {
+        varchar key PK "varchar(255)"
+        varchar owner  "varchar(255)"
+        bigint expiration  "bigint"
+    }
+    failed_jobs {
+        bigint id PK "bigint unsigned"
+        varchar uuid UK "varchar(255)"
+        text connection  "text"
+        text queue  "text"
+        longtext payload  "longtext"
+        longtext exception  "longtext"
+        timestamp failed_at  "timestamp"
+    }
+    funding_sources {
+        bigint id PK "bigint unsigned"
+        varchar name UK "varchar(255)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    job_batches {
+        varchar id PK "varchar(255)"
+        varchar name  "varchar(255)"
+        int total_jobs  "int"
+        int pending_jobs  "int"
+        int failed_jobs  "int"
+        longtext failed_job_ids  "longtext"
+        mediumtext options  "mediumtext nullable"
+        int cancelled_at  "int nullable"
+        int created_at  "int"
+        int finished_at  "int nullable"
+    }
+    jobs {
+        bigint id PK "bigint unsigned"
+        varchar queue  "varchar(255)"
+        longtext payload  "longtext"
+        tinyint attempts  "tinyint unsigned"
+        int reserved_at  "int unsigned nullable"
+        int available_at  "int unsigned"
+        int created_at  "int unsigned"
+    }
+    migrations {
+        int id PK "int unsigned"
+        varchar migration  "varchar(255)"
+        int batch  "int"
+    }
+    model_has_permissions {
+        bigint permission_id PK,FK "bigint unsigned"
+        varchar model_type PK "varchar(255)"
+        bigint model_id PK "bigint unsigned"
+    }
+    model_has_roles {
+        bigint role_id PK,FK "bigint unsigned"
+        varchar model_type PK "varchar(255)"
+        bigint model_id PK "bigint unsigned"
+    }
+    opds {
+        bigint id PK "bigint unsigned"
+        varchar nama_opd  "varchar(255)"
+        varchar kode_unit UK "varchar(50) nullable"
+        varchar singkatan  "varchar(50) nullable"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    password_reset_tokens {
+        varchar email PK "varchar(255)"
+        varchar token  "varchar(255)"
+        timestamp created_at  "timestamp nullable"
+    }
+    pending_file_deletions {
+        bigint id PK "bigint unsigned"
+        varchar disk  "varchar(20)"
+        text path  "text"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    permissions {
+        bigint id PK "bigint unsigned"
+        varchar name  "varchar(255)"
+        varchar guard_name  "varchar(255)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    review_guide_requirements {
+        bigint id PK "bigint unsigned"
+        bigint review_guide_id FK "bigint unsigned"
+        int position  "int unsigned"
+        text name  "text"
+    }
+    review_guides {
+        bigint id PK "bigint unsigned"
+        varchar kode_rekening FK,UK "varchar(50)"
+        varchar nama_belanja  "varchar(255)"
+        text notes  "text nullable"
+        tinyint is_active  "tinyint(1)"
+        bigint created_by FK "bigint unsigned nullable"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    role_has_permissions {
+        bigint permission_id PK,FK "bigint unsigned"
+        bigint role_id PK,FK "bigint unsigned"
+    }
+    roles {
+        bigint id PK "bigint unsigned"
+        varchar name  "varchar(255)"
+        varchar guard_name  "varchar(255)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    schedules {
+        bigint id PK "bigint unsigned"
+        enum type  "enum('upload_period','review_period')"
+        date start_date  "date"
+        date end_date  "date"
+        text description  "text nullable"
+        tinyint is_active  "tinyint(1)"
+        bigint created_by FK "bigint unsigned nullable"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    sessions {
+        varchar id PK "varchar(255)"
+        bigint user_id  "bigint unsigned nullable"
+        varchar ip_address  "varchar(45) nullable"
+        text user_agent  "text nullable"
+        longtext payload  "longtext"
+        int last_activity  "int"
+    }
+    sp2d {
+        bigint id PK "bigint unsigned"
+        bigint opd_id FK "bigint unsigned"
+        varchar nomor_sp2d UK "varchar(100)"
+        date tanggal  "date"
+        decimal jumlah_total  "decimal(15,2)"
+        bigint created_by FK "bigint unsigned"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    sp2d_budget_codes {
+        bigint id PK "bigint unsigned"
+        bigint sp2d_id FK "bigint unsigned"
+        varchar uraian  "varchar(255)"
+        decimal jumlah  "decimal(15,2)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+        bigint budget_subactivity_id FK "bigint unsigned nullable"
+        bigint budget_account_id FK "bigint unsigned"
+    }
+    sp2d_funding_allocations {
+        bigint id PK "bigint unsigned"
+        bigint sp2d_budget_code_id FK "bigint unsigned"
+        bigint funding_source_id FK "bigint unsigned"
+        decimal amount  "decimal(15,2)"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    sp2d_import_rows {
+        bigint id PK "bigint unsigned"
+        bigint sp2d_budget_code_id FK,UK "bigint unsigned"
+        varchar source_file  "varchar(255)"
+        int row_number  "int unsigned"
+        json headers  "json"
+        json values  "json"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    spj {
+        bigint id PK "bigint unsigned"
+        bigint sp2d_id FK,UK "bigint unsigned"
+        bigint sp2d_budget_code_id FK "bigint unsigned nullable"
+        varchar nomor_spj  "varchar(100)"
+        date tanggal  "date"
+        decimal jumlah  "decimal(15,2)"
+        enum status  "enum('draft','submitted','in_review','reviewed')"
+        bigint reviewed_by FK "bigint unsigned nullable"
+        datetime reviewed_at  "datetime nullable"
+        text review_notes  "text nullable"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+        int review_version  "int unsigned"
+        varchar review_mode  "varchar(20) nullable"
+    }
+    spj_documents {
+        bigint id PK "bigint unsigned"
+        bigint spj_id FK "bigint unsigned"
+        bigint sp2d_budget_code_id FK "bigint unsigned nullable"
+        varchar document_type  "varchar(255)"
+        varchar file_name  "varchar(255)"
+        varchar file_path  "varchar(255)"
+        varchar file_type  "varchar(50)"
+        bigint size  "bigint"
+        bigint uploaded_by FK "bigint unsigned"
+        timestamp uploaded_at  "timestamp"
+    }
+    spj_exports {
+        char id PK "char(36)"
+        bigint user_id FK "bigint unsigned"
+        bigint opd_id FK "bigint unsigned"
+        varchar opd_name  "varchar(255)"
+        varchar mode  "varchar(20)"
+        varchar compression  "varchar(20)"
+        varchar status  "varchar(20)"
+        json selection  "json"
+        bigint total_files  "bigint unsigned"
+        bigint processed_files  "bigint unsigned"
+        bigint total_bytes  "bigint unsigned"
+        bigint processed_bytes  "bigint unsigned"
+        json parts  "json nullable"
+        text error  "text nullable"
+        timestamp started_at  "timestamp nullable"
+        timestamp expires_at  "timestamp nullable"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    spj_findings {
+        bigint id PK "bigint unsigned"
+        bigint spj_id FK "bigint unsigned"
+        bigint sp2d_budget_code_id FK "bigint unsigned nullable"
+        enum finding_type  "enum('minor','major','note')"
+        text description  "text"
+        bigint created_by FK "bigint unsigned"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+        enum status_bukti  "enum('lengkap','tidak_lengkap','belum_dibelanjakan') nullable"
+    }
+    spj_review_history {
+        bigint id PK "bigint unsigned"
+        bigint spj_id FK "bigint unsigned"
+        int version  "int unsigned"
+        json snapshot  "json"
+        bigint actor_id FK "bigint unsigned nullable"
+        text reason  "text nullable"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    users {
+        bigint id PK "bigint unsigned"
+        bigint opd_id FK "bigint unsigned nullable"
+        bigint parent_irban_id FK "bigint unsigned nullable"
+        varchar name  "varchar(255)"
+        varchar email UK "varchar(255)"
+        timestamp email_verified_at  "timestamp nullable"
+        varchar password  "varchar(255)"
+        tinyint mfa_enabled  "tinyint(1)"
+        text mfa_secret  "text nullable"
+        text mfa_recovery_codes  "text nullable"
+        timestamp mfa_confirmed_at  "timestamp nullable"
+        varchar remember_token  "varchar(100) nullable"
+        timestamp created_at  "timestamp nullable"
+        timestamp updated_at  "timestamp nullable"
+    }
+    users o|..o{ activity_logs : "user_id"
+    opds ||..o{ auditor_opd_assignments : "opd_id"
+    users ||..o{ auditor_opd_assignments : "user_id"
+    budget_programs ||..o{ budget_activities : "budget_program_id"
+    budget_affairs ||..o{ budget_programs : "budget_affair_id"
+    budget_activities ||..o{ budget_subactivities : "budget_activity_id"
+    permissions ||..o{ model_has_permissions : "permission_id"
+    roles ||..o{ model_has_roles : "role_id"
+    review_guides ||..o{ review_guide_requirements : "review_guide_id"
+    users o|..o{ review_guides : "created_by"
+    budget_accounts ||..o| review_guides : "kode_rekening"
+    permissions ||..o{ role_has_permissions : "permission_id"
+    roles ||..o{ role_has_permissions : "role_id"
+    users o|..o{ schedules : "created_by"
+    users ||..o{ sp2d : "created_by"
+    opds ||..o{ sp2d : "opd_id"
+    budget_accounts ||..o{ sp2d_budget_codes : "budget_account_id"
+    budget_subactivities o|..o{ sp2d_budget_codes : "budget_subactivity_id"
+    sp2d ||..o{ sp2d_budget_codes : "sp2d_id"
+    funding_sources ||..o{ sp2d_funding_allocations : "funding_source_id"
+    sp2d_budget_codes ||..o{ sp2d_funding_allocations : "sp2d_budget_code_id"
+    sp2d_budget_codes ||..o| sp2d_import_rows : "sp2d_budget_code_id"
+    users o|..o{ spj : "reviewed_by"
+    sp2d_budget_codes o|..o{ spj : "sp2d_budget_code_id"
+    sp2d ||..o| spj : "sp2d_id"
+    sp2d_budget_codes o|..o{ spj_documents : "sp2d_budget_code_id"
+    spj ||..o{ spj_documents : "spj_id"
+    users ||..o{ spj_documents : "uploaded_by"
+    opds ||..o{ spj_exports : "opd_id"
+    users ||..o{ spj_exports : "user_id"
+    users ||..o{ spj_findings : "created_by"
+    sp2d_budget_codes o|..o{ spj_findings : "sp2d_budget_code_id"
+    spj ||..o{ spj_findings : "spj_id"
+    users o|..o{ spj_review_history : "actor_id"
+    spj ||..o{ spj_review_history : "spj_id"
+    opds o|..o{ users : "opd_id"
+    users o|..o{ users : "parent_irban_id"
+```
+
+[Kamus schema dan indeks lengkap](../SCHEMA-DATABASE.md)

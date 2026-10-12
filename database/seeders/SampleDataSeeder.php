@@ -29,7 +29,6 @@ class SampleDataSeeder extends Seeder
             'name' => 'Admin Inspektorat',
             'email' => 'admin@inspektorat.go.id',
             'password' => Hash::make('password'),
-            'role' => 'admin',
             'opd_id' => 5, // Inspektorat
         ]);
         $adminInsp->assignRole('admin');
@@ -39,7 +38,6 @@ class SampleDataSeeder extends Seeder
             'name' => 'Admin Dinas Pendidikan',
             'email' => 'admin@dinaspendidikan.go.id',
             'password' => Hash::make('password'),
-            'role' => 'opd_admin',
             'opd_id' => 1,
         ]);
         $opdAdmin1->assignRole('opd_admin');
@@ -48,7 +46,6 @@ class SampleDataSeeder extends Seeder
             'name' => 'Admin Dinas Kesehatan',
             'email' => 'admin@dinkes.go.id',
             'password' => Hash::make('password'),
-            'role' => 'opd_admin',
             'opd_id' => 2,
         ]);
         $opdAdmin2->assignRole('opd_admin');
@@ -59,7 +56,6 @@ class SampleDataSeeder extends Seeder
                 'name' => "Irban $i",
                 'email' => "irban$i@inspektorat.go.id",
                 'password' => Hash::make('password'),
-                'role' => 'irban',
                 'opd_id' => 5, // Inspektorat
             ]);
             $irban->assignRole('irban');
@@ -70,7 +66,6 @@ class SampleDataSeeder extends Seeder
             'name' => 'Inspektur',
             'email' => 'inspektur@inspektorat.go.id',
             'password' => Hash::make('password'),
-            'role' => 'inspektur',
             'opd_id' => 5,
         ]);
         $inspektur->assignRole('inspektur');

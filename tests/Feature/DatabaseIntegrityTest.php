@@ -58,10 +58,10 @@ class DatabaseIntegrityTest extends TestCase
         SpjDocument::create(['spj_id' => $s->id, 'sp2d_budget_code_id' => $code->id, 'document_type' => 'bukti_belanja', 'file_name' => 'x.pdf', 'file_path' => 'x.pdf', 'file_type' => 'application/pdf', 'size' => 1, 'uploaded_by' => $u->id]);
     }
 
-    public function test_role_display_uses_permission_role_not_legacy_column(): void
+    public function test_role_display_uses_single_permission_source(): void
     {
         $this->seed(RolePermissionSeeder::class);
-        $u = User::factory()->create(['role' => 'admin']);
+        $u = User::factory()->create();
         $u->assignRole('irban');
         $this->assertSame('irban', $u->primary_role);
         $this->assertSame(1, User::role('irban')->count());

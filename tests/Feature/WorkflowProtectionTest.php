@@ -38,6 +38,65 @@ class WorkflowProtectionTest extends TestCase
         return Spj::create(['sp2d_id' => $sp2d->id, 'opd_id' => $sp2d->opd_id, 'nomor_spj' => 'UJI', 'tanggal' => '2026-09-01', 'jumlah' => 1000, 'status' => 'submitted']);
     }
 
+    public function test_spending_question_filters_sum_only_matching_accounts(): void
+    {
+        [$sp2d] = $this->fixture();
+        $sp2d->update(['tanggal'=>'2026-02-12']);
+        $sp2d->budgetCodes()->create(['kode_belanja'=>'5.2', 'uraian'=>'Belanja Perjalanan Dinas Dalam Negeri', 'jumlah'=>250]);
+        $sp2d->budgetCodes()->create(['kode_belanja'=>'5.2', 'uraian'=>'Belanja Perjalanan Dinas Dalam Negeri', 'jumlah'=>125]);
+        $this->get(route('spending-analysis.index', ['tahun'=>2026,'triwulan'=>1,'belanja'=>'perjalanan dinas']))->assertOk()
+            ->assertViewHas('totals', fn ($t) => (float)$t->amount === 375.0 && (int)$t->documents === 1)
+            ->assertViewHas('ranking', fn ($rows) => (float)$rows->first()->amount === 375.0)
+            ->assertViewHas('months', fn ($months) => $months->count() === 3)
+            ->assertViewHas('spendingNames', fn ($names) => $names->contains('Belanja Perjalanan Dinas Dalam Negeri'));
+        $this->get(route('spending-analysis.index', ['tahun'=>2026,'triwulan'=>2,'belanja'=>'perjalanan dinas']))->assertOk()
+            ->assertViewHas('totals', fn ($t) => (float)$t->amount === 0.0)
+            ->assertViewHas('spendingNames', fn ($names) => $names->isEmpty());
+        $this->get(route('spending-analysis.index', ['tahun'=>2026,'kode'=>'5.1']))->assertOk()
+            ->assertViewHas('totals', fn ($t) => (float)$t->amount === 1000.0);
+    }
+
+    public function test_spending_modal_returns_matching_spj_and_enforces_scope(): void
+    {
+        [$sp2d] = $this->fixture();
+        $this->spj($sp2d);
+        $params = ['tahun'=>2026, 'kode'=>'5.1', 'detail'=>1];
+        $this->getJson(route('spending-analysis.index', $params))->assertOk()->assertJsonPath('total', 1)
+            ->assertJsonPath('rows.0.number', $sp2d->nomor_sp2d)->assertJsonPath('rows.0.status', 'submitted');
+        $this->getJson(route('spending-analysis.index', ['tahun'=>2026,'bulan'=>9,'detail'=>1]))->assertOk()->assertJsonPath('total', 1);
+        $this->getJson(route('spending-analysis.index', ['tahun'=>2026,'detail'=>1,'exclude_codes'=>['5.1']]))->assertOk()->assertJsonPath('total', 0);
+        $other = User::factory()->create();
+        $other->assignRole('irban');
+        $this->actingAs($other)->getJson(route('spending-analysis.index', $params))->assertOk()->assertJsonPath('total', 0);
+        $this->getJson(route('spending-analysis.index', $params + ['opd_id'=>$sp2d->opd_id]))->assertForbidden();
+    }
+
+    public function test_spending_advanced_filters_and_validation(): void
+    {
+        $this->fixture();
+        $this->get(route('spending-analysis.index', ['tahun'=>2026,'bulan'=>9,'nilai_max'=>1000,'nomor_sp2d'=>'TU']))->assertOk()
+            ->assertViewHas('totals', fn ($t) => (float)$t->amount === 1000.0);
+        $this->get(route('spending-analysis.index', ['tahun'=>2026,'tanggal_dari'=>'2026-10-01','nilai_min'=>500]))->assertOk()
+            ->assertViewHas('totals', fn ($t) => (float)$t->amount === 0.0);
+        $this->getJson(route('spending-analysis.index', ['nilai_min'=>500,'nilai_max'=>100]))->assertUnprocessable();
+        $this->getJson(route('spending-analysis.index', ['tanggal_dari'=>'2026-10-01','tanggal_sampai'=>'2026-09-01']))->assertUnprocessable();
+    }
+
+    public function test_spending_analysis_totals_and_scope(): void
+    {
+        [$sp2d] = $this->fixture();
+        $sp2d->budgetCodes()->create(['kode_belanja'=>'5.1', 'uraian'=>'Tambahan', 'jumlah'=>100]);
+        $this->get(route('spending-analysis.index', ['tahun'=>2026]))->assertOk()
+            ->assertViewHas('totals', fn ($totals) => (int)$totals->documents === 1 && (float)$totals->amount === 1100.0)
+            ->assertViewHas('months', fn ($months) => $months->count() === 12 && $months[8]['amount'] === 1100.0)
+            ->assertViewHas('accounts', fn ($accounts) => (int)$accounts->first()->entries === 2);
+        $this->get(route('spending-analysis.index', ['tahun'=>2025]))->assertOk()->assertSee('Tidak ada rincian belanja sesuai pilihan');
+        $other = User::factory()->create();
+        $other->assignRole('irban');
+        $this->actingAs($other)->get(route('spending-analysis.index', ['opd_id'=>$sp2d->opd_id]))->assertForbidden();
+        $this->get(route('spending-analysis.index'))->assertOk()->assertViewHas('totals', fn ($totals) => (int)$totals->documents === 0);
+    }
+
     public function test_report_separates_unspent_accounts_and_renders_both_views(): void
     {
         [$sp2d, $code] = $this->fixture();

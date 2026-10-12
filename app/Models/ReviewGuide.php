@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Support\RequiredDocuments;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class ReviewGuide extends Model
 {
@@ -16,25 +19,41 @@ class ReviewGuide extends Model
         'is_active' => 'boolean',
     ];
 
-    public function getRequiredDocumentsAttribute($value): array
+    protected $with = ['requirements'];
+
+    protected $appends = ['required_documents'];
+
+    private ?array $pendingDocuments = null;
+
+    public function requirements(): HasMany
     {
-        if (is_array($value)) {
-            return $value;
-        }
+        return $this->hasMany(ReviewGuideRequirement::class)->orderBy('position');
+    }
 
-        $decoded = json_decode($value, true);
+    public function getRequiredDocumentsAttribute(): array
+    {
+        return $this->pendingDocuments ?? $this->requirements->pluck('name')->all();
+    }
 
-        if (is_array($decoded)) {
-            return $decoded;
-        }
+    public function setRequiredDocumentsAttribute($value): void
+    {
+        $this->pendingDocuments = RequiredDocuments::decode($value);
+    }
 
-        $decoded2 = json_decode($decoded, true);
+    public function save(array $options = [])
+    {
+        return DB::transaction(function () use ($options) {
+            BudgetAccount::firstOrCreate(['code' => $this->kode_rekening]);
+            $saved = parent::save($options);
+            if ($saved && $this->pendingDocuments !== null) {
+                $this->requirements()->delete();
+                $this->requirements()->createMany(array_map(fn ($name, $position) => ['name' => $name, 'position' => $position], $this->pendingDocuments, array_keys($this->pendingDocuments)));
+                $this->pendingDocuments = null;
+                $this->unsetRelation('requirements');
+            }
 
-        if (is_array($decoded2)) {
-            return $decoded2;
-        }
-
-        return array_map('trim', explode(',', $value));
+            return $saved;
+        });
     }
 
     public function creator(): BelongsTo

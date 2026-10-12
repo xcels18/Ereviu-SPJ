@@ -67,6 +67,10 @@ class SpjExportService
                 }
                 $documents = $compiler->selectedDocuments($sp2d, $ids);
                 $folder = (Str::slug($export->opd_name) ?: 'opd').'/'.$sp2d->id.'-'.Str::slug($sp2d->nomor_sp2d);
+                if (($selection['folder_layout'] ?? 'opd_sp2d') === 'year_quarter') {
+                    $folder = (Str::slug($export->opd_name) ?: 'opd').'/'.$sp2d->tanggal->format('Y').'/Triwulan-'.$sp2d->triwulan.'/'.$sp2d->id.'-'.Str::slug($sp2d->nomor_sp2d);
+                }
+                $accountFolders = $sp2d->budgetCodes->keyBy('id');
                 $sources = [];
                 if ($export->mode === 'merged') {
                     $inputBytes = 0;
@@ -81,7 +85,14 @@ class SpjExportService
                 } else {
                     foreach ($documents as $doc) {
                         $name = preg_replace('/[^\pL\pN._ -]/u', '_', basename(str_replace('\\', '/', $doc->file_name)));
-                        $sources[] = ['path' => $this->sourcePath($doc->file_path), 'name' => $folder.'/'.$doc->document_type.'/'.$doc->id.'-'.mb_substr($name ?: 'dokumen', 0, 140), 'temporary' => false];
+                        $documentFolder = $doc->document_type;
+                        if ($doc->document_type === 'bukti_belanja') {
+                            $account = $accountFolders->get($doc->sp2d_budget_code_id);
+                            $documentFolder .= $account
+                                ? '/'.$account->id.'-'.(Str::slug($account->kode_belanja) ?: 'akun')
+                                : '/gabungan';
+                        }
+                        $sources[] = ['path' => $this->sourcePath($doc->file_path), 'name' => $folder.'/'.$documentFolder.'/'.$doc->id.'-'.mb_substr($name ?: 'dokumen', 0, 140), 'temporary' => false];
                     }
                 }
                 foreach ($sources as $source) {

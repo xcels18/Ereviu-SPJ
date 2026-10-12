@@ -81,7 +81,6 @@ class UserController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'role' => $validated['role'],
                 'parent_irban_id' => $validated['role'] === 'operator_irban' ? $validated['parent_irban_id'] : null,
             ]);
             $user->assignRole($validated['role']);
@@ -139,7 +138,6 @@ class UserController extends Controller
             }
             $user->name = $validated['name'];
             $user->email = $validated['email'];
-            $user->role = $validated['role'];
             $user->parent_irban_id = $validated['role'] === 'operator_irban' ? $validated['parent_irban_id'] : null;
 
             if (! empty($validated['password'])) {

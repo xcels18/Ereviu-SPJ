@@ -71,6 +71,38 @@ class SpjExportTest extends TestCase
         return $export;
     }
 
+    public function test_period_folders_keep_repeated_budget_codes_separate(): void
+    {
+        [$user, $opd, $sp2d] = $this->fixture();
+        $spj = $sp2d->spj()->first();
+        $ids = [];
+        foreach ([1, 2] as $n) {
+            $code = $sp2d->budgetCodes()->create(['kode_belanja' => '5.1', 'uraian' => 'Belanja', 'jumlah' => 50]);
+            $ids[] = $code->id;
+            SpjDocument::create(['spj_id' => $spj->id, 'sp2d_budget_code_id' => $code->id, 'document_type' => 'bukti_belanja', 'file_name' => 'bukti.pdf', 'file_path' => 'spj/test-0.pdf', 'file_type' => 'application/pdf', 'size' => 8, 'uploaded_by' => $user->id]);
+        }
+        $export = $this->submit($user, $opd, ['folder_layout' => 'year_quarter']);
+        app(SpjExportService::class)->build($export);
+        $export->refresh();
+        $this->assertSame('completed', $export->status);
+        $names = [];
+        foreach ($export->parts as $part) {
+            $zip = new ZipArchive;
+            $zip->open($export->directory().'/'.$part['name']);
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $names[] = $zip->getNameIndex($i);
+            }
+            $zip->close();
+        }
+        $this->assertCount(5, $names);
+        foreach ($names as $name) {
+            $this->assertStringContainsString('/2026/Triwulan-3/', $name);
+        }
+        foreach ($ids as $id) {
+            $this->assertTrue(collect($names)->contains(fn ($name) => str_contains($name, '/bukti_belanja/'.$id.'-')));
+        }
+    }
+
     public function test_large_export_is_queued_and_split_without_modifying_source_bytes(): void
     {
         [$user, $opd] = $this->fixture();

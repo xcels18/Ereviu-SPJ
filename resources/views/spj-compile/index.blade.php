@@ -1,13 +1,16 @@
 <x-app-layout>
     <x-slot name="header"><div><h1 class="page-title">Pusat Arsip SPJ</h1><p class="text-xs text-slate-500 mt-1">Kompilasi latar belakang & unduhan bertahap</p></div></x-slot>
     <div class="p-6 max-w-7xl mx-auto" x-data="spjExportCenter()" x-init="init()">
+        @role('admin')<div class="mb-4"><a href="{{ route('database-backups.index') }}" class="btn-secondary">Backup database</a></div>@endrole
         <section class="records-heading"><div><p class="records-kicker">DOKUMEN VOLUME BESAR</p><h2>Siapkan arsip.<br><span>Lanjutkan pekerjaan Anda.</span></h2><p>Proses berjalan di server meskipun halaman ditutup. Hasil tersedia dalam ZIP mandiri dan dapat diunduh ulang selama 24 jam.</p></div></section>
         <div x-show="error" x-cloak class="alert-error" role="alert" x-text="error"></div>
+        <div class="card p-4 mb-5"><h2 class="font-semibold text-sm">Simpan arsip ke komputer</h2><p class="text-xs text-slate-500 mt-2">Setelah paket siap, unduh ZIP per bagian atau pilih “Simpan semua ZIP ke folder lokal” pada Chrome/Edge yang mendukung. Ekstrak seluruh ZIP ke folder tujuan yang sama untuk menyatukan struktur dokumen. Penyimpanan lokal memerlukan halaman tetap terbuka.</p><p class="text-xs mt-2" role="status" x-text="localProgress"></p><button x-show="localBusy" class="btn-secondary mt-2" @click="localAbort?.abort()">Hentikan unduhan lokal</button></div>
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <section class="card p-6 xl:col-span-1 self-start"><h2 class="text-base font-semibold mb-5">Buat paket arsip</h2>
                 <label for="export-opd" class="form-label">Perangkat daerah</label><select id="export-opd" x-model="opd" @change="resetSelection()" class="form-input mb-5"><option value="">Pilih OPD</option>@foreach($opds as $opd)<option value="{{ $opd->id }}">{{ $opd->nama_opd }}</option>@endforeach</select>
                 <label for="export-scope" class="form-label">Cakupan dokumen</label><select id="export-scope" x-model="scope" @change="if(scope === 'selected') loadPage(1)" class="form-input mb-5"><option value="all">Seluruh SP2D yang memiliki SPJ</option><option value="selected">Pilih SP2D dan akun belanja</option></select>
                 <label for="export-mode" class="form-label">Susunan hasil</label><select id="export-mode" x-model="mode" class="form-input"><option value="original">Dokumen asli (volume besar)</option><option value="merged">PDF gabungan per SP2D</option></select><p class="text-xs text-slate-500 leading-relaxed mt-2 mb-5" x-text="mode === 'original' ? 'Scan SP2D dan bukti belanja disusun per SP2D. Isi dan kualitas berkas tetap utuh.' : 'Maksimal 64 MiB input dan 300 halaman per SP2D. Untuk dokumen lebih besar atau PDF yang tidak didukung, gunakan arsip asli.'"></p>
+                <label for="export-layout" class="form-label">Struktur folder</label><select id="export-layout" x-model="folderLayout" class="form-input mb-3"><option value="opd_sp2d">OPD → SP2D → Jenis dokumen → Akun</option><option value="year_quarter">OPD → Tahun → Triwulan → SP2D → Jenis dokumen → Akun</option></select><p class="text-xs text-slate-500 mb-5">Bukti gabungan disimpan sekali dalam folder gabungan. Kode akun yang sama tetap dipisahkan berdasarkan ID akun.</p>
                 <label for="export-compression" class="form-label">Kompresi</label><select id="export-compression" x-model="compression" class="form-input"><option value="fast">Cepat (tanpa kompresi ulang)</option><option value="balanced">Kompresi ringan (level 1)</option></select><p class="text-xs text-slate-500 leading-relaxed mt-2">PDF dan foto umumnya sudah terkompresi. Penurunan ukuran tidak dijamin.</p>
                 <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 mt-5 text-xs text-slate-600 leading-relaxed">Paket dibagi sekitar 1 GiB atau 1.000 berkas per ZIP. Satu berkas yang melebihi batas ditempatkan dalam ZIP tersendiri. Setiap bagian dapat dibuka secara independen.</div>
                 <button class="btn-primary w-full justify-center mt-5" :disabled="busy || !opd || active || (scope === 'selected' && !selected.length)" @click="submit()"><span x-text="busy ? 'Mengirim…' : 'Antrekan paket arsip'"></span></button><p x-show="active" class="text-xs text-slate-500 mt-2">Satu paket aktif per pengguna. Tunggu selesai atau batalkan paket yang berjalan.</p>
@@ -22,7 +25,7 @@
                     <div class="space-y-4"><template x-for="item in exports" :key="item.id"><article class="border border-slate-200 rounded-xl p-4"><div class="flex flex-wrap gap-2 justify-between"><h3 class="text-sm font-semibold" x-text="item.opd_name"></h3><span class="badge-slate" x-text="labels[item.status] || item.status"></span></div><p class="text-xs text-slate-500 mt-2" x-text="new Date(item.created_at).toLocaleString('id-ID') + ' · ' + (item.mode === 'original' ? 'Dokumen asli' : 'PDF gabungan')"></p>
                         <progress class="w-full h-2 mt-4 accent-brand-700" max="100" :value="item.status === 'completed' ? 100 : (item.total_files ? item.processed_files / item.total_files * 100 : 0)" :aria-label="'Progres paket ' + item.opd_name"></progress><p class="text-xs text-slate-500 mt-2" x-text="item.processed_files + ' / ' + item.total_files + ' berkas · ' + bytes(item.processed_bytes) + ' / ' + bytes(item.total_bytes)"></p>
                         <p x-show="item.status === 'queued'" class="text-xs text-slate-500 mt-3">Menunggu worker. Paket besar dapat memerlukan waktu lama sebelum giliran berikutnya.</p><p x-show="item.error" class="text-xs text-red-700 mt-3" x-text="item.error"></p>
-                        <div class="mt-3 flex flex-wrap gap-2"><template x-for="part in item.parts.filter(p => p.url)" :key="part.name"><a :href="part.url" class="btn-secondary btn-sm" x-text="part.name + ' · ' + bytes(part.bytes)"></a></template><button x-show="['queued','preparing','archiving'].includes(item.status)" class="btn-secondary btn-sm" @click="cancel(item.id)">Batalkan proses</button></div><p x-show="item.status === 'completed' && item.expires_at" class="text-xs text-slate-500 mt-3" x-text="'Unduhan tersedia sampai ' + new Date(item.expires_at).toLocaleString('id-ID')"></p>
+                        <div class="mt-3 flex flex-wrap gap-2"><button x-show="item.status === 'completed' && item.parts.some(p => p.url)" :disabled="localBusy" class="btn-primary btn-sm" @click="saveLocally(item)">Simpan semua ZIP ke folder lokal</button><template x-for="part in item.parts.filter(p => p.url)" :key="part.name"><a :href="part.url" class="btn-secondary btn-sm" x-text="part.name + ' · ' + bytes(part.bytes)"></a></template><button x-show="['queued','preparing','archiving'].includes(item.status)" class="btn-secondary btn-sm" @click="cancel(item.id)">Batalkan proses</button></div><p x-show="item.status === 'completed' && item.expires_at" class="text-xs text-slate-500 mt-3" x-text="'Unduhan tersedia sampai ' + new Date(item.expires_at).toLocaleString('id-ID')"></p>
                     </article></template></div>
                 </section>
             </div>
@@ -32,6 +35,7 @@
     <script>
     function spjExportCenter() {
         return {
+            folderLayout: 'opd_sp2d', localBusy: false, localProgress: '', localAbort: null,
             opd: '', scope: 'all', mode: 'original', compression: 'fast', selected: [], budget: {}, accounts: {},
             rows: [], page: 1, nextPage: null, exports: [], busy: false, loading: false, error: '', timer: null,
             labels: { queued: 'Dalam antrean', preparing: 'Menyusun dokumen', archiving: 'Menulis ZIP', completed: 'Siap diunduh', cancelling: 'Membatalkan…', cancelled: 'Dibatalkan', failed: 'Gagal', expired: 'Kedaluwarsa' },
@@ -49,7 +53,36 @@
             toggle(id, checked) { if(checked) {if(!this.selected.includes(id)) this.selected.push(id);} else {this.selected = this.selected.filter(x => x !== id); delete this.budget[id]; delete this.accounts[id];} },
             async loadAccounts(id) { try { const data = await this.request('{{ route('spj-compile.budget-codes') }}', {sp2d_ids:[id]}); if(!this.selected.includes(id)) return; const item = data.data[0]; this.accounts[id] = item.akun; if(item.akun.length) this.budget[id] = item.akun.map(a => a.id); } catch(e) {this.error = e.message;} },
             toggleAccount(id, code, checked) { this.budget[id] = checked ? [...(this.budget[id] || []), code] : this.budget[id].filter(x => x !== code); },
-            async submit() { this.busy = true; this.error = ''; try { const budget = Object.fromEntries(Object.entries(this.budget).filter(([id]) => this.selected.includes(Number(id)))); if(this.scope === 'selected' && Object.values(budget).some(a => !a.length)) throw new Error('Pilih minimal satu akun atau hapus SP2D tersebut dari pilihan.'); await this.request('{{ route('spj-compile.generate') }}', {opd_id:Number(this.opd), all:this.scope === 'all', mode:this.mode, compression:this.compression, sp2d_ids:this.scope === 'all' ? [] : this.selected, budget_codes:this.scope === 'all' ? {} : budget}); await this.refresh(); } catch(e) {this.error = e.message;} finally {this.busy = false;} },
+            async submit() { this.busy = true; this.error = ''; try { const budget = Object.fromEntries(Object.entries(this.budget).filter(([id]) => this.selected.includes(Number(id)))); if(this.scope === 'selected' && Object.values(budget).some(a => !a.length)) throw new Error('Pilih minimal satu akun atau hapus SP2D tersebut dari pilihan.'); await this.request('{{ route('spj-compile.generate') }}', {opd_id:Number(this.opd), all:this.scope === 'all', mode:this.mode, compression:this.compression, folder_layout:this.folderLayout, sp2d_ids:this.scope === 'all' ? [] : this.selected, budget_codes:this.scope === 'all' ? {} : budget}); await this.refresh(); } catch(e) {this.error = e.message;} finally {this.busy = false;} },
+            async saveLocally(item) {
+                if (!window.showDirectoryPicker) { this.error = 'Browser ini belum mendukung pemilihan folder. Gunakan tautan ZIP per bagian atau buka melalui Chrome/Edge.'; return; }
+                if (this.localBusy) return;
+                this.localBusy = true; this.error = ''; this.localAbort = new AbortController();
+                try {
+                    const root = await window.showDirectoryPicker({mode:'readwrite'});
+                    const folder = await root.getDirectoryHandle('SPJ-' + item.id + '-' + Date.now(), {create:true});
+                    const parts = item.parts.filter(p => p.url);
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i];
+                        this.localAbort.signal.throwIfAborted();
+                        const response = await fetch(part.url, {signal:this.localAbort.signal});
+                        if (!response.ok || !response.body) throw new Error('Unduhan tidak tersedia. Muat ulang status paket.');
+                        const file = await folder.getFileHandle(part.name, {create:true});
+                        const writer = await file.createWritable();
+                        let received = 0;
+                        const progress = new TransformStream({transform: (chunk, controller) => {
+                            received += chunk.byteLength;
+                            this.localProgress = 'Bagian ' + (i + 1) + '/' + parts.length + ': ' + this.bytes(received) + ' / ' + this.bytes(part.bytes);
+                            controller.enqueue(chunk);
+                        }});
+                        await response.body.pipeThrough(progress).pipeTo(writer, {signal:this.localAbort.signal});
+                    }
+                    this.localProgress = parts.length + ' ZIP tersimpan di folder ' + folder.name + '. Ekstrak semua bagian ke satu folder yang sama.';
+                } catch(e) {
+                    this.localProgress = e.name === 'AbortError' ? 'Unduhan dihentikan. Bagian yang sudah selesai tetap tersimpan.' : 'Unduhan belum selesai. Bagian yang selesai tetap tersimpan.';
+                    if(e.name !== 'AbortError') this.error = e.message;
+                } finally { this.localBusy = false; this.localAbort = null; }
+            },
             async cancel(id) { try { await this.request('/spj-compile/exports/' + id + '/cancel', {}); await this.refresh(); } catch(e) {this.error = e.message;} },
         };
     }

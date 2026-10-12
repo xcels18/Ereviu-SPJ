@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Validation\ValidationException;
 
 class Spj extends Model
@@ -18,6 +19,18 @@ class Spj extends Model
         'sp2d_id', 'opd_id', 'sp2d_budget_code_id', 'nomor_spj', 'tanggal', 'jumlah',
         'review_version', 'review_mode', 'status', 'reviewed_by', 'reviewed_at', 'review_notes',
     ];
+
+    private ?int $requestedOpdId = null;
+
+    public function getOpdIdAttribute(): ?int
+    {
+        return $this->sp2d?->opd_id;
+    }
+
+    public function setOpdIdAttribute($value): void
+    {
+        $this->requestedOpdId = $value === null ? null : (int) $value;
+    }
 
     protected function casts(): array
     {
@@ -32,7 +45,7 @@ class Spj extends Model
     {
         static::saving(function (Spj $spj) {
             $parent = Sp2d::findOrFail($spj->sp2d_id);
-            if ((int) $spj->opd_id !== (int) $parent->opd_id) {
+            if ($spj->requestedOpdId !== null && $spj->requestedOpdId !== (int) $parent->opd_id) {
                 throw ValidationException::withMessages(['opd_id' => 'OPD SPJ harus sama dengan OPD SP2D induk.']);
             }
             if ($spj->sp2d_budget_code_id !== null && ! Sp2dBudgetCode::whereKey($spj->sp2d_budget_code_id)->where('sp2d_id', $parent->id)->exists()) {
@@ -46,9 +59,9 @@ class Spj extends Model
         return $this->belongsTo(Sp2d::class);
     }
 
-    public function opd(): BelongsTo
+    public function opd(): HasOneThrough
     {
-        return $this->belongsTo(Opd::class);
+        return $this->hasOneThrough(Opd::class, Sp2d::class, 'id', 'id', 'sp2d_id', 'opd_id');
     }
 
     public function budgetCode(): BelongsTo

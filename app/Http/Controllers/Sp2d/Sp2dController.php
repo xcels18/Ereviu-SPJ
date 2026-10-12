@@ -11,6 +11,8 @@ use App\Models\Spj;
 use App\Models\SpjDocument;
 use App\Models\SpjFinding;
 use App\Services\ActivityLogger;
+use App\Services\BudgetHierarchyResolver;
+use App\Services\FundingAllocationService;
 use App\Services\Sp2dImportValidator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,7 +37,7 @@ class Sp2dController extends Controller
         }
 
         if (request('tahun')) {
-            $sp2dQuery->where('tahun', request('tahun'));
+            $sp2dQuery->whereYear('tanggal', request('tahun'));
         }
 
         if ($request->filled('search')) {
@@ -48,7 +50,7 @@ class Sp2dController extends Controller
 
         $sp2ds = $sp2dQuery->orderBy('tanggal', 'desc')->orderByDesc('id')->paginate(15);
         $opds = Opd::orderBy('nama_opd')->get();
-        $availableYears = Sp2d::whereNotNull('tahun')->distinct()->orderByDesc('tahun')->pluck('tahun');
+        $availableYears = Sp2d::select('tanggal')->distinct()->orderByDesc('tanggal')->pluck('tanggal')->map(fn ($date) => $date->year)->unique()->values();
 
         return view('sp2d.index', compact('sp2ds', 'opds', 'totalCount', 'totalNilai', 'availableYears', 'totalOpd'));
     }
@@ -66,8 +68,6 @@ class Sp2dController extends Controller
             'opd_id' => 'required|exists:opds,id',
             'nomor_sp2d' => 'required|string|max:100|unique:sp2d,nomor_sp2d',
             'tanggal' => 'required|date',
-            'tahun' => 'required|integer|min:2020|max:2100',
-            'triwulan' => 'required|integer|min:1|max:4',
             'jumlah_total' => 'required|numeric|min:0',
         ]);
 
@@ -94,7 +94,7 @@ class Sp2dController extends Controller
 
     public function show(Sp2d $sp2d)
     {
-        $sp2d->load(['opd', 'budgetCodes', 'creator']);
+        $sp2d->load(['opd', 'budgetCodes.subactivity.activity.program.affair', 'budgetCodes.fundingAllocations.fundingSource', 'creator']);
 
         return view('sp2d.show', compact('sp2d'));
     }
@@ -113,8 +113,6 @@ class Sp2dController extends Controller
             'opd_id' => 'required|exists:opds,id',
             'nomor_sp2d' => 'required|string|max:100|unique:sp2d,nomor_sp2d,'.$sp2d->id,
             'tanggal' => 'required|date',
-            'tahun' => 'required|integer|min:2020|max:2100',
-            'triwulan' => 'required|integer|min:1|max:4',
             'jumlah_total' => 'required|numeric|min:0',
         ]);
 
@@ -151,7 +149,7 @@ class Sp2dController extends Controller
                         }
                         $kept[] = $code->id;
                         $code->fill($row);
-                        if ($hasSpj && $code->isDirty(['kode_belanja', 'jumlah'])) {
+                        if ($hasSpj && $code->isDirty(['budget_account_id', 'jumlah'])) {
                             throw ValidationException::withMessages(['budget_codes' => 'Kode dan nilai akun yang sudah memiliki SPJ tidak dapat diubah.']);
                         }
                         $code->save();
@@ -205,7 +203,8 @@ class Sp2dController extends Controller
                 return back()->with('error', 'File kosong atau format tidak dikenali.');
             }
 
-            $header = array_map(fn ($h) => strtoupper(trim((string) $h)), array_shift($rows));
+            $sourceHeader = array_values(array_shift($rows));
+            $header = array_map(fn ($h) => strtoupper(trim((string) $h)), $sourceHeader);
 
             $requiredColumns = ['KDUNIT', 'NMUNIT', 'KDPER', 'NMPER', 'NOSP2D', 'TGL_SP2D', 'NILAI_SP2D'];
             $col = [];
@@ -217,6 +216,19 @@ class Sp2dController extends Controller
                 $col[$name] = $idx;
             }
 
+            foreach ([...Sp2dImportValidator::HIERARCHY_COLUMNS, 'SUMBER_DANA'] as $name) {
+                $idx = array_search($name, $header, true);
+                if ($idx !== false) {
+                    $col[$name] = $idx;
+                }
+            }
+            // Ambiguous business columns must not silently select the first occurrence.
+            foreach (array_keys($col) as $name) {
+                if (count(array_keys($header, $name, true)) > 1) {
+                    throw ValidationException::withMessages(['file' => "Kolom $name berulang. Perbaiki header sebelum mengimpor."]);
+                }
+            }
+
             $parser = new Sp2dImportValidator;
             $groups = $parser->groups($rows, $col);
 
@@ -224,6 +236,8 @@ class Sp2dController extends Controller
 
             $count = 0;
             $skipped = 0;
+            $withoutHierarchy = 0;
+            $hierarchies = new BudgetHierarchyResolver;
 
             foreach ($groups as $nomor => $data) {
                 if (Sp2d::where('nomor_sp2d', $nomor)->exists()) {
@@ -283,12 +297,25 @@ class Sp2dController extends Controller
                         continue;
                     }
 
-                    Sp2dBudgetCode::create([
+                    $budgetCode = Sp2dBudgetCode::create([
                         'sp2d_id' => $sp2d->id,
                         'kode_belanja' => $detail['kode_belanja'],
                         'uraian' => $detail['uraian'],
                         'jumlah' => $detail['jumlah'],
+                        'budget_subactivity_id' => $hierarchies->resolve($detail['hierarchy']),
                     ]);
+                    if ($detail['funding_source'] !== '') {
+                        app(FundingAllocationService::class)->replace($budgetCode, [['name' => $detail['funding_source'], 'amount' => $detail['jumlah']]]);
+                    }
+                    $budgetCode->importRow()->create([
+                        'source_file' => mb_substr(basename($request->file('file')->getClientOriginalName()), 0, 255),
+                        'row_number' => $detail['row_number'],
+                        'headers' => $sourceHeader,
+                        'values' => $detail['source_row'],
+                    ]);
+                    if ($detail['hierarchy'] === null) {
+                        $withoutHierarchy++;
+                    }
                 }
 
                 $count++;
@@ -300,6 +327,10 @@ class Sp2dController extends Controller
             $message = "Berhasil mengimport $count SP2D.";
             if ($skipped > 0) {
                 $message .= " $skipped dilewati (nomor SP2D sudah ada atau OPD tidak ditemukan).";
+            }
+
+            if ($withoutHierarchy > 0) {
+                $message .= " $withoutHierarchy rincian belum memiliki informasi urusan/program/kegiatan/subkegiatan pada file sumber.";
             }
 
             return back()->with('success', $message);

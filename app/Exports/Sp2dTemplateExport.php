@@ -27,6 +27,7 @@ class Sp2dTemplateExport implements FromArray, WithHeadings
                 '2026-01-02',
                 'Pengajuan SP2D LS Atas Tunjangan Komunikasi Insentif Pimpinan dan Anggota DPRD Bulan Januari Tahun 2026',
                 558600000,
+                '', // SUMBER_DANA: optional; do not assume the source of funds.
             ],
         ];
     }
@@ -50,6 +51,7 @@ class Sp2dTemplateExport implements FromArray, WithHeadings
             'TGL_BKU',
             'URAIAN',
             'NILAI_BKU',
+            'SUMBER_DANA',
         ];
     }
 }

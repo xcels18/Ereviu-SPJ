@@ -18,7 +18,7 @@ class ReleasePreflight extends Command
         $failed = false;
         $checks = [
             'SP2D memiliki beberapa SPJ' => DB::table('spj')->select('sp2d_id')->groupBy('sp2d_id')->havingRaw('count(*) > 1')->get()->count(),
-            'OPD SPJ berbeda dari SP2D' => DB::table('spj as s')->join('sp2d as p', 'p.id', '=', 's.sp2d_id')->whereColumn('s.opd_id', '<>', 'p.opd_id')->count(),
+            'OPD SPJ berbeda dari SP2D' => Schema::hasColumn('spj', 'opd_id') ? DB::table('spj as s')->join('sp2d as p', 'p.id', '=', 's.sp2d_id')->whereColumn('s.opd_id', '<>', 'p.opd_id')->count() : 0,
             'Dokumen terhubung ke akun SP2D lain' => DB::table('spj_documents as d')->join('spj as s', 's.id', '=', 'd.spj_id')->join('sp2d_budget_codes as c', 'c.id', '=', 'd.sp2d_budget_code_id')->whereColumn('s.sp2d_id', '<>', 'c.sp2d_id')->count(),
             'Pengguna tanpa role Spatie' => User::doesntHave('roles')->count(),
         ];

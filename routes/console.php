@@ -80,3 +80,13 @@ Artisan::command('spj:operations-status', function () {
 
     return 0;
 })->purpose('Ringkasan operasional untuk monitoring server');
+
+Artisan::command('database-backups:prune', function () {
+    $root = storage_path('app/private/database-backups');
+    foreach (is_dir($root) ? File::directories($root) : [] as $dir) {
+        if (! is_file($dir.'/status.json')) continue;
+        $item = json_decode(file_get_contents($dir.'/status.json'), true);
+        if (($item['expires_at'] ?? PHP_INT_MAX) <= time()) File::deleteDirectory($dir);
+    }
+})->purpose('Bersihkan backup database setelah 24 jam');
+Schedule::command('database-backups:prune')->hourly()->withoutOverlapping();

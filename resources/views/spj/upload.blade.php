@@ -42,7 +42,7 @@
             @if (($mode ?? 'sp2d_list') === 'opd_list')
                 <!-- Executive Modern Hero Header for OPD Directory -->
                 <div class="mb-8">
-                    <div class="ek-spj-heading relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 text-white p-7 sm:p-8 shadow-xl shadow-slate-900/10 border border-slate-800">
+                    <div class="ek-spj-heading relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 text-white p-7 sm:p-8 shadow-none border border-slate-800">
                         <div class="absolute -right-16 -top-16 w-80 h-80 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
                         <div class="absolute right-32 -bottom-20 w-64 h-64 bg-gold-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -54,7 +54,7 @@
                                         Direktori Perangkat Daerah
                                     </span>
                                 </div>
-                                <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                                <h2 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight">
                                     Pilih Perangkat Daerah untuk Reviu &amp; Bukti SPJ
                                 </h2>
                                 <p class="text-sm text-slate-300 leading-relaxed font-normal">
@@ -91,7 +91,7 @@
                             </div>
                         </div>
                         <div class="flex items-baseline justify-between">
-                            <p class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $opdSummaries->count() }} <span class="text-sm font-semibold text-slate-500">OPD</span></p>
+                            <p class="text-3xl font-semibold text-slate-900 tracking-tight">{{ $opdSummaries->count() }} <span class="text-sm font-semibold text-slate-500">OPD</span></p>
                             <span class="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-100">
                                 {{ number_format($totalSp2dSemua, 0, ',', '.') }} SP2D
                             </span>
@@ -111,7 +111,7 @@
                             </div>
                         </div>
                         <div class="flex items-baseline justify-between">
-                            <p class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
+                            <p class="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight font-mono">
                                 Rp {{ number_format($totalAnggaranSemua, 0, ',', '.') }}
                             </p>
                         </div>
@@ -130,7 +130,7 @@
                             </div>
                         </div>
                         <div class="flex items-baseline justify-between">
-                            <p class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $rataPersentase }}<span class="text-base font-semibold text-slate-500">%</span></p>
+                            <p class="text-3xl font-semibold text-slate-900 tracking-tight">{{ $rataPersentase }}<span class="text-base font-semibold text-slate-500">%</span></p>
                             <span class="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">
                                 Rata-rata Bukti
                             </span>
@@ -178,7 +178,7 @@
                     <!-- Clean & Elegant OPD Cards Grid -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         @forelse ($opdSummaries as $item)
-                            <div class="group relative bg-white rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-brand-300 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-6">
+                            <div class="group relative bg-white rounded-3xl border border-slate-200/90 shadow-xs hover:shadow-sm hover:border-brand-300 transition-all duration-300 flex flex-col justify-between p-6">
                                 <div>
                                     <!-- Top Card Meta -->
                                     <div class="flex items-center justify-between gap-2 mb-4">
@@ -269,7 +269,7 @@
                     @endif
 
                     <!-- Hero Banner OPD -->
-                    <div class="ek-spj-heading relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 text-white p-7 sm:p-8 shadow-xl shadow-slate-900/10 border border-slate-800">
+                    <div class="ek-spj-heading relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-brand-950 to-brand-900 text-white p-7 sm:p-8 shadow-none border border-slate-800">
                         <div class="absolute -right-16 -top-16 w-80 h-80 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
                         <div class="absolute right-32 -bottom-20 w-64 h-64 bg-gold-400/10 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -286,7 +286,7 @@
                                         </span>
                                     @endif
                                 </div>
-                                <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                                <h2 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight">
                                     {{ $selectedOpd?->nama_opd ?? 'Dokumen SPJ Perangkat Daerah' }}
                                 </h2>
                                 <p class="text-sm text-slate-300 leading-relaxed max-w-2xl font-normal">
@@ -363,7 +363,7 @@
                                 </div>
                             </div>
                             <div class="flex items-baseline justify-between">
-                                <p class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $totalSp2dCount }}</p>
+                                <p class="text-3xl font-semibold text-slate-900 tracking-tight">{{ $totalSp2dCount }}</p>
                                 <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">100% Terdata</span>
                             </div>
                             <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
@@ -381,7 +381,7 @@
                                 </div>
                             </div>
                             <div class="flex items-baseline justify-between">
-                                <p class="text-3xl font-extrabold text-rose-700 tracking-tight">{{ $belumCount }}</p>
+                                <p class="text-3xl font-semibold text-rose-700 tracking-tight">{{ $belumCount }}</p>
                                 <span class="text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100">
                                     {{ $totalSp2dCount > 0 ? round(($belumCount / $totalSp2dCount) * 100) : 0 }}% Belum
                                 </span>
@@ -401,7 +401,7 @@
                                 </div>
                             </div>
                             <div class="flex items-baseline justify-between">
-                                <p class="text-3xl font-extrabold text-amber-700 tracking-tight">{{ $prosesCount }}</p>
+                                <p class="text-3xl font-semibold text-amber-700 tracking-tight">{{ $prosesCount }}</p>
                                 <span class="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">
                                     {{ $totalSp2dCount > 0 ? round(($prosesCount / $totalSp2dCount) * 100) : 0 }}% Proses
                                 </span>
@@ -421,7 +421,7 @@
                                 </div>
                             </div>
                             <div class="flex items-baseline justify-between">
-                                <p class="text-3xl font-extrabold text-emerald-700 tracking-tight">{{ $reviewedCount }}</p>
+                                <p class="text-3xl font-semibold text-emerald-700 tracking-tight">{{ $reviewedCount }}</p>
                                 <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
                                     {{ $totalSp2dCount > 0 ? round(($reviewedCount / $totalSp2dCount) * 100) : 0 }}% Valid
                                 </span>
@@ -721,7 +721,7 @@
                                             <!-- Kolom Dokumen SP2D -->
                                             <td class="py-4 px-5 sm:px-6 align-top">
                                                 <div class="flex items-center gap-2 mb-1.5">
-                                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase bg-brand-50 text-brand-800 border border-brand-200/60">
+                                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wider uppercase bg-brand-50 text-brand-800 border border-brand-200/60">
                                                         {{ $tipeSp2d }}
                                                     </span>
                                                     <span class="text-xs font-semibold text-slate-500 flex items-center gap-1">
@@ -914,7 +914,7 @@
                             <div>
                                 <div class="flex items-center gap-2">
                                     <h3 class="text-base sm:text-lg font-bold tracking-tight text-white">Unggah Pertanggungjawaban SPJ</h3>
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gold-400/20 text-gold-300 border border-gold-400/30">Formulir Resmi</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-gold-400/20 text-gold-300 border border-gold-400/30">Formulir Resmi</span>
                                 </div>
                                 <p id="modal_subtitle" class="text-xs text-slate-300 font-mono mt-0.5"></p>
                             </div>
@@ -1185,7 +1185,7 @@
 
                                             <div class="md:col-span-5 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 text-left md:text-right">
                                                 <p class="text-[11px] font-bold text-gold-300 uppercase tracking-wider mb-1">Total Nilai Pencairan</p>
-                                                <p id="review_nilai_total" class="text-xl sm:text-2xl font-mono font-extrabold text-white tracking-tight"></p>
+                                                <p id="review_nilai_total" class="text-xl sm:text-2xl font-mono font-semibold text-white tracking-tight"></p>
                                             </div>
                                         </div>
                                     </div>

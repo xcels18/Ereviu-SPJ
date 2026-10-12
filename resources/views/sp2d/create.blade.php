@@ -45,27 +45,8 @@
                             <span class="text-red-600 text-sm">{{ $message }}</span>
                             @enderror
                         </div>
-                        <div>
-                            <label for="tahun" class="form-label">Tahun</label>
-                            <input type="number" name="tahun" id="tahun" value="{{ old('tahun', date('Y')) }}"
-                                class="form-input" required>
-                            @error('tahun')
-                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
-                        <div>
-                            <label for="triwulan" class="form-label">Triwulan</label>
-                            <select name="triwulan" id="triwulan" class="form-input" required>
-                                <option value="">Pilih</option>
-                                @foreach ([1, 2, 3, 4] as $tw)
-                                <option value="{{ $tw }}" {{ old('triwulan') == $tw ? 'selected' : '' }}>Triwulan {{ $tw }}</option>
-                                @endforeach
-                            </select>
-                            @error('triwulan')
-                            <span class="text-red-600 text-sm">{{ $message }}</span>
-                            @enderror
-                        </div>
                     </div>
+                    <p class="mb-4 text-sm text-slate-500">Tahun dan triwulan dihitung otomatis dari tanggal SP2D.</p>
 
                     <div class="mb-6">
                         <label for="jumlah_total" class="form-label">Jumlah Total</label>

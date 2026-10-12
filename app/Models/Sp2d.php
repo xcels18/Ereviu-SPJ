@@ -22,6 +22,23 @@ class Sp2d extends Model
         ];
     }
 
+    protected $appends = ['tahun', 'triwulan'];
+
+    public function getTahunAttribute(): ?int
+    {
+        return $this->tanggal?->year;
+    }
+
+    public function getTriwulanAttribute(): ?int
+    {
+        return $this->tanggal?->quarter;
+    }
+
+    // Compatibility with historical seeders; period is always derived from tanggal.
+    public function setTahunAttribute($value): void {}
+
+    public function setTriwulanAttribute($value): void {}
+
     public function opd(): BelongsTo
     {
         return $this->belongsTo(Opd::class);

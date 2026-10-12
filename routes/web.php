@@ -43,6 +43,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/sp2d/{sp2d}', [Sp2dController::class, 'update'])->name('sp2d.update');
         Route::delete('/sp2d/{sp2d}', [Sp2dController::class, 'destroy'])->name('sp2d.destroy');
         Route::post('/sp2d/import', [Sp2dController::class, 'import'])->name('sp2d.import');
+        Route::get('/sp2d/{sp2d}/budget-codes/{budgetCode}/funding', [\App\Http\Controllers\Sp2d\Sp2dFundingController::class, 'edit'])->name('sp2d.funding.edit');
+        Route::put('/sp2d/{sp2d}/budget-codes/{budgetCode}/funding', [\App\Http\Controllers\Sp2d\Sp2dFundingController::class, 'update'])->name('sp2d.funding.update');
         Route::get('/sp2d/{sp2d}/budget-codes', [Sp2dController::class, 'budgetCodes'])->name('sp2d.budget-codes');
     });
 
@@ -78,6 +80,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
+    Route::get('/analisis-belanja', [\App\Http\Controllers\Report\SpendingAnalysisController::class, 'index'])->middleware('permission:view_reports')->name('spending-analysis.index');
+
     // Report Routes
     Route::middleware(['permission:view_reports'])->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -88,6 +92,12 @@ Route::middleware('auth')->group(function () {
     });
     Route::middleware(['permission:export_reports'])->group(function () {
         Route::get('/reports/cetak', [ReportController::class, 'cetakLaporan'])->name('reports.cetak');
+    });
+
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/database-backups', [\App\Http\Controllers\DatabaseBackupController::class, 'index'])->name('database-backups.index');
+        Route::post('/database-backups', [\App\Http\Controllers\DatabaseBackupController::class, 'store'])->middleware('throttle:3,1')->name('database-backups.store');
+        Route::get('/database-backups/{id}/download', [\App\Http\Controllers\DatabaseBackupController::class, 'download'])->whereUuid('id')->name('database-backups.download');
     });
 
     // Compile SPJ Routes (admin)

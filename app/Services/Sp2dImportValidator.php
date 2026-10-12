@@ -7,6 +7,8 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class Sp2dImportValidator
 {
+    public const HIERARCHY_COLUMNS = ['NAMA_URUSAN', 'NAMA_PROGRAM', 'NAMA_KEGIATAN', 'NAMA_SUB_KEGIATAN'];
+
     public function amount($value, int $line): int
     {
         $value = trim((string) $value);
@@ -65,13 +67,35 @@ class Sp2dImportValidator
             if ($groups[$key]['total_cents'] > 999999999999999) {
                 $this->fail($line, 'Total SP2D melebihi kapasitas nominal database.');
             }
-            $groups[$key]['details'][] = ['kode_belanja' => $values['KDPER'], 'uraian' => $values['NMPER'], 'jumlah' => $this->decimal($cents)];
+            $funding = isset($columns['SUMBER_DANA']) ? trim((string) ($row[$columns['SUMBER_DANA']] ?? '')) : '';
+            if (mb_strlen($funding) > 255) {
+                $this->fail($line, 'SUMBER_DANA maksimal 255 karakter.');
+            }
+            $groups[$key]['details'][] = ['funding_source' => $funding, 'hierarchy' => $this->hierarchy($row, $columns, $line), 'source_row' => array_values($row), 'row_number' => $line, 'kode_belanja' => $values['KDPER'], 'uraian' => $values['NMPER'], 'jumlah' => $this->decimal($cents)];
         }
         if (! $groups) {
             $this->fail(2, 'Tidak ada rincian SP2D yang dapat diimpor.');
         }
 
         return $groups;
+    }
+
+    private function hierarchy(array $row, array $columns, int $line): ?array
+    {
+        $values = [];
+        foreach (self::HIERARCHY_COLUMNS as $name) {
+            $values[$name] = isset($columns[$name]) ? trim((string) ($row[$columns[$name]] ?? '')) : '';
+        }
+        if (! array_filter($values, fn ($value) => $value !== '')) {
+            return null;
+        }
+        foreach ($values as $name => $value) {
+            if ($value === '' || mb_strlen($value) > 255) {
+                $this->fail($line, "$name wajib diisi dan maksimal 255 karakter jika hierarki belanja disertakan.");
+            }
+        }
+
+        return $values;
     }
 
     private function fail(int $line, string $message): never

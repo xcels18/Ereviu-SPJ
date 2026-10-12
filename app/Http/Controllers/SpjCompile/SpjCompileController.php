@@ -118,6 +118,7 @@ class SpjCompileController extends Controller
             'all' => ['required', 'boolean'],
             'mode' => ['required', Rule::in(['original', 'merged'])],
             'compression' => ['required', Rule::in(['fast', 'balanced'])],
+            'folder_layout' => ['sometimes', Rule::in(['opd_sp2d', 'year_quarter'])],
             'sp2d_ids' => ['required_if:all,false', 'array', 'max:5000'],
             'sp2d_ids.*' => ['integer', 'distinct'],
             'budget_codes' => ['sometimes', 'array', 'max:5000'],
@@ -147,7 +148,7 @@ class SpjCompileController extends Controller
                     'user_id' => $request->user()->id, 'opd_id' => $data['opd_id'],
                     'opd_name' => Opd::findOrFail($data['opd_id'])->nama_opd,
                     'mode' => $data['mode'], 'compression' => $data['compression'],
-                    'selection' => ['all' => (bool) $data['all'], 'sp2d_ids' => $ids, 'budget_codes' => $data['budget_codes'] ?? []],
+                    'selection' => ['folder_layout' => $data['folder_layout'] ?? 'opd_sp2d', 'all' => (bool) $data['all'], 'sp2d_ids' => $ids, 'budget_codes' => $data['budget_codes'] ?? []],
                 ]);
                 BuildSpjExport::dispatch($export->id);
                 ActivityLogger::log('compile', 'spj_compile', 'Mengantrekan paket SPJ '.$export->id, $export);

@@ -41,20 +41,8 @@
                             <input type="date" name="tanggal" id="tanggal" value="{{ $sp2d->tanggal->format('Y-m-d') }}"
                                 class="form-input" required>
                         </div>
-                        <div>
-                            <label for="tahun" class="form-label">Tahun</label>
-                            <input type="number" name="tahun" id="tahun" value="{{ old('tahun', $sp2d->tahun) }}"
-                                class="form-input" required>
-                        </div>
-                        <div>
-                            <label for="triwulan" class="form-label">Triwulan</label>
-                            <select name="triwulan" id="triwulan" class="form-input" required>
-                                @foreach ([1, 2, 3, 4] as $tw)
-                                <option value="{{ $tw }}" {{ $sp2d->triwulan == $tw ? 'selected' : '' }}>Triwulan {{ $tw }}</option>
-                                @endforeach
-                            </select>
-                        </div>
                     </div>
+                    <p class="mb-4 text-sm text-slate-500">Tahun dan triwulan dihitung otomatis dari tanggal SP2D.</p>
 
                     <div class="mb-6">
                         <label for="jumlah_total" class="form-label">Jumlah Total</label>

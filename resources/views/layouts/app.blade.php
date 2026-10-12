@@ -115,6 +115,10 @@
                     <div class="pt-4 pb-1">
                         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3">Laporan</p>
                     </div>
+                    <a href="{{ route('spending-analysis.index') }}" class="nav-link {{ request()->routeIs('spending-analysis.*') ? 'nav-active' : '' }}">
+                        <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 4v16h16M8 15l4-5 4 2 4-7"/></svg>
+                        Analisis Belanja Daerah
+                    </a>
                     <a href="{{ route('reports.index') }}"
                         class="nav-link {{ request()->routeIs('reports.*') && !request()->routeIs('reports.cetak') ? 'nav-active' : '' }}">
                         <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

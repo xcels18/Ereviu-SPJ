@@ -39,9 +39,9 @@ class DashboardController extends Controller
 
         $sp2dQuery = Sp2d::query();
         $spjQuery = Spj::query();
-        if (!$isAdminInspektorat) {
+        if (! $isAdminInspektorat) {
             $sp2dQuery->whereIn('opd_id', $opdScope);
-            $spjQuery->whereIn('opd_id', $opdScope);
+            $spjQuery->whereHas('sp2d', fn ($q) => $q->whereIn('opd_id', $opdScope));
         }
 
         $totalSp2d = (clone $sp2dQuery)->count();
@@ -82,7 +82,7 @@ class DashboardController extends Controller
         $akunBelanjaDenganBukti = Sp2dBudgetCode::whereIn('sp2d_id', $scopedSp2dIds ?: [0])
             ->where(function ($q) use ($budgetCodeIdsWithBukti, $sp2dIdsWithGabunganBukti) {
                 $q->whereIn('id', $budgetCodeIdsWithBukti ?: [0])
-                  ->orWhereIn('sp2d_id', $sp2dIdsWithGabunganBukti ?: [0]);
+                    ->orWhereIn('sp2d_id', $sp2dIdsWithGabunganBukti ?: [0]);
             })
             ->count();
 

@@ -695,11 +695,11 @@ class ReportController extends Controller
         $query = Spj::with(['opd', 'sp2d', 'budgetCode', 'reviewer']);
 
         if ($assignedOpdIds !== null) {
-            $query->whereIn('opd_id', $assignedOpdIds ?: [0]);
+            $query->whereHas('sp2d', fn ($q) => $q->whereIn('opd_id', $assignedOpdIds ?: [0]));
         }
 
         if ($request->filled('opd_id') && ($assignedOpdIds === null || in_array((int) $request->opd_id, $assignedOpdIds, true))) {
-            $query->where('opd_id', $request->opd_id);
+            $query->whereHas('sp2d', fn ($q) => $q->where('opd_id', $request->opd_id));
         }
 
         if ($request->status) {
@@ -707,7 +707,7 @@ class ReportController extends Controller
         }
 
         if ($request->tahun) {
-            $query->whereHas('sp2d', fn ($q) => $q->where('tahun', $request->tahun));
+            $query->whereHas('sp2d', fn ($q) => $q->whereYear('tanggal', $request->tahun));
         }
 
         if ($request->filled('export')) {
@@ -740,11 +740,11 @@ class ReportController extends Controller
         $query = SpjFinding::with(['spj.opd', 'creator']);
 
         if ($assignedOpdIds !== null) {
-            $query->whereHas('spj', fn ($q) => $q->whereIn('opd_id', $assignedOpdIds ?: [0]));
+            $query->whereHas('spj.sp2d', fn ($q) => $q->whereIn('opd_id', $assignedOpdIds ?: [0]));
         }
 
         if ($request->filled('opd_id') && ($assignedOpdIds === null || in_array((int) $request->opd_id, $assignedOpdIds, true))) {
-            $query->whereHas('spj', fn ($q) => $q->where('opd_id', $request->opd_id));
+            $query->whereHas('spj.sp2d', fn ($q) => $q->where('opd_id', $request->opd_id));
         }
 
         if ($request->finding_type) {
@@ -784,7 +784,6 @@ class ReportController extends Controller
         $selectedIrban = $request->filled('irban_id')
             ? $irbans->firstWhere('id', (int) $request->input('irban_id')) : null;
         abort_if($request->filled('irban_id') && ! $selectedIrban, 403);
-
 
         $opdQuery = $assignedOpdIds === null ? Opd::query() : Opd::whereIn('id', $assignedOpdIds ?: [0]);
         if ($selectedIrban) {
@@ -864,7 +863,7 @@ class ReportController extends Controller
         }
 
         if ($triwulan !== 'all') {
-            $sp2dQuery->where('triwulan', (int) $triwulan);
+            $sp2dQuery->whereMonth('tanggal', '>=', ((int) $triwulan - 1) * 3 + 1)->whereMonth('tanggal', '<=', (int) $triwulan * 3);
         }
 
         abort_if((clone $sp2dQuery)->count() > 2000, 422, 'Cetak dibatasi 2.000 SP2D. Persempit periode dan OPD.');
